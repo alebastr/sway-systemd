@@ -29,3 +29,17 @@ configure_file(
   output: '@BASENAME@',
   install_dir: conf_dir,
 )
+
+if not get_option('cgroups').disabled()
+  install_data('src/assign-cgroups.py',
+    install_dir: exec_dir,
+    install_mode: 'rwxr-xr-x',
+  )
+
+  configure_file(
+    configuration: conf_data,
+    input: 'config.d/10-systemd-cgroups.conf.in',
+    output: '@BASENAME@',
+    install_dir: conf_dir,
+  )
+endif

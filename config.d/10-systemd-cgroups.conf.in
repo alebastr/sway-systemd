@@ -1,0 +1,11 @@
+# Automatically assign a dedicated systemd scope to the GUI applications
+# launched in the same cgroup as the compositor. This could be helpful for
+# implementing cgroup-based resource management and would be necessary when
+# `systemd-oomd` is in use.
+#
+# Limitations: The script is using i3ipc window:new event to detect application
+# launches and would fail to detect background apps or special surfaces.
+# Therefore it's recommended to supplement the script with use of systemd user
+# services for such background apps.
+#
+exec @execdir@/assign-cgroups.py

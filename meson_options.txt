@@ -1,0 +1,1 @@
+option('cgroups', type: 'feature', value: 'disabled', description: 'Install script for assigning cgroups to applications')
