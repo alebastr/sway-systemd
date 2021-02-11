@@ -1,0 +1,73 @@
+# vim: ft=spec
+%if 0%{?fedora} >= 34
+%bcond_without  cgroups
+%else
+%bcond_with     cgroups
+%endif
+
+Name:           {{{ git_name }}}
+Version:        0
+Release:        {{{ git_release }}}%{?dist}
+Summary:        Systemd integration for Sway session
+
+License:        MIT
+URL:            https://github.com/alebastr/sway-systemd
+VCS:            {{{ git_vcs }}}
+Source0:        {{{ git_pack }}}
+
+BuildArch:      noarch
+
+BuildRequires:  meson
+BuildRequires:  pkgconfig(systemd)
+BuildRequires:  systemd-rpm-macros
+
+%if %{with cgroups}
+Requires:       python3dist(dbus-next)
+Requires:       python3dist(i3ipc)
+Requires:       python3dist(psutil)
+Requires:       python3dist(python-xlib)
+%endif
+Requires:       sway
+Requires:       systemd
+Recommends:     lsof
+Recommends:     /usr/bin/dbus-update-activation-environment
+
+%description
+%{summary}
+
+The goal of this project is to provide a minimal set of configs and
+scripts required for running Sway in a systemd environment.
+
+This includes several areas of integration:
+ - Propagate required variables to the systemd user session environment.
+ - Define sway-session.target for starting user services.
+ - Place GUI applications into a systemd scopes for systemd-oomd
+   compatibility.
+
+%prep
+{{{ git_setup_macro }}}
+
+
+%build
+%meson \
+    -Dcgroups=%{?with_cgroups:enabled}%{!?with_cgroups:disabled}
+%meson_build
+
+
+%install
+%meson_install
+
+
+%files
+%license LICENSE
+%doc README.md
+%{_libexecdir}/%{name}/start-session.sh
+%{_sysconfdir}/sway/config.d/10-systemd-session.conf
+%{_userunitdir}/sway-session.target
+%if %{with cgroups}
+%{_libexecdir}/%{name}/assign-cgroups.py
+%{_sysconfdir}/sway/config.d/10-systemd-cgroups.conf
+%endif
+
+%changelog
+{{{ git_changelog }}}

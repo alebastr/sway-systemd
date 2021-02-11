@@ -1,0 +1,11 @@
+# vim ft:sh
+function git_release {
+    total_commits="$(git rev-list --all --count)"
+    snap_date="$(date +%+4Y%m%d)"
+    shortcommit="$(git rev-parse --short HEAD)"
+    output "0.$total_commits.${snap_date}git${shortcommit}"
+}
+
+function git_dir_release {
+    git_release "$@"
+}
