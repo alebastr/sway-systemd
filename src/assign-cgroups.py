@@ -149,7 +149,7 @@ class CGroupHandler:
 async def main():
     """Async entrypoint"""
     bus = await MessageBus().connect()
-    conn = await Connection(auto_reconnect=True).connect()
+    conn = await Connection(auto_reconnect=False).connect()
     await CGroupHandler(bus, conn).connect()
     await conn.main()
 
