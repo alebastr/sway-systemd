@@ -22,4 +22,7 @@
 #    package here provides and uses `sway-session.target` which would bind to
 #    the `graphical-session.target`.
 #
-exec @execdir@/start-session.sh
+# 4. Optionally, stop the target and unset the variables when the compositor
+#    exits.
+#
+exec @execdir@/start-session.sh --cleanup

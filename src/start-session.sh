@@ -24,6 +24,12 @@
 #    package here provides and uses `sway-session.target` which would bind to
 #    the `graphical-session.target`.
 #
+# 4. Optionally, stop the target and unset the variables when the compositor
+#    exits.
+#
+# Arguments:
+#  --cleanup   Run optional cleanup code at compositor exit.
+#
 # References:
 #  - https://github.com/swaywm/sway/wiki#gtk-applications-take-20-seconds-to-start
 #  - https://github.com/emersion/xdg-desktop-portal-wlr/wiki/systemd-user-services,-pam,-and-environment-variables
@@ -32,10 +38,35 @@
 #
 export XDG_CURRENT_DESKTOP=sway
 VARIABLES="DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+SESSION_TARGET="sway-session.target"
 
+# DBus activation environment is independent from systemd. While most of
+# dbus-activated services are already using `SystemdService` directive, some
+# still don't and thus we should set the dbus environment with a separate
+# command.
 if hash dbus-update-activation-environment 2>/dev/null; then
     dbus-update-activation-environment --systemd $VARIABLES
 fi
 
 systemctl --user import-environment $VARIABLES
-systemctl --user start sway-session.target
+systemctl --user start "$SESSION_TARGET"
+
+# Optionally, wait until the compositor exits and cleanup variables and services.
+if [ "$1" != "--cleanup" ] ||
+    [ -z "$WAYLAND_DISPLAY" ] ||
+    [ -z "$XDG_RUNTIME_DIR" ] ||
+    ! hash lsof 2>/dev/null
+then
+    exit 0;
+fi
+# get the compositor pid from wayland socket and wait until it exits
+# XXX: there's a possible race when the compositor exits and another process
+# with the same pid is started. One way to resolve this is to connect to a
+# wayland socket and wait until it's closed.
+COMPOSITOR_PID="$(lsof -t -f -- "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}")"
+echo "waiting until the process ${COMPOSITOR_PID} terminates"
+tail -f /dev/null --pid "${COMPOSITOR_PID}"
+
+# stop the session target and unset the variables
+systemctl --user stop "$SESSION_TARGET"
+systemctl --user unset-environment $VARIABLES
