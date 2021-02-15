@@ -17,10 +17,12 @@ import logging
 import socket
 import struct
 
+from functools import wraps
 from typing import Optional
 
 from dbus_next import Variant
 from dbus_next.aio import MessageBus
+from dbus_next.errors import DBusError
 from i3ipc import Event
 from i3ipc.aio import Con, Connection
 from psutil import Process
@@ -54,6 +56,26 @@ def get_pid_by_socket(sockpath: str) -> int:
 def escape_app_id(app_id: str) -> str:
     """Escape app_id for systemd APIs"""
     return app_id.replace("-", "\\x2d")
+
+
+def retry_async(exception=Exception, tries=3):
+    def retry_async_decorator(func):
+        @wraps(func)
+        async def decorated(*args, **kwargs):
+            err = None
+            for i in range(tries):
+                try:
+                    return await func(*args, **kwargs)
+                except exception as exc:
+                    err = exc
+                    logging.warning(
+                        "retry: %s failed (%d/%d): %s", func.__name__, i + 1, tries, err
+                    )
+            raise err
+
+        return decorated
+
+    return retry_async_decorator
 
 
 class CGroupHandler:
@@ -90,8 +112,8 @@ class CGroupHandler:
             with open(f"/proc/{pid}/cgroup", "r") as file:
                 cgroup = file.read()
             return cgroup.strip().split(":")[-1]
-        except OSError as err:
-            self.log.error("Error geting cgroup info", exc_info=err)
+        except OSError:
+            self.log.exception("Error geting cgroup info")
         return None
 
     def get_app_id(self, con: Con) -> str:
@@ -121,6 +143,7 @@ class CGroupHandler:
 
         return self.get_net_wm_pid(con.window)
 
+    @retry_async(exception=DBusError, tries=3)
     async def assign_scope(self, app_id: str, pid: int):
         """
         Assign process (and all unassigned children) to the
@@ -130,6 +153,10 @@ class CGroupHandler:
         sd_unit = f"app-{app_id}-{pid}.scope"
         sd_slice = f"app-{app_id}.slice"
         proc = Process(pid)
+        # Collect child processes as systemd assigns a scope only to explicitly
+        # specified PIDs.
+        # There's a risk of race as the child processes may exit by the time dbus call
+        # reaches systemd, hence the @retry_async decorator is applied to the method.
         pids = [pid] + [
             x.pid
             for x in proc.children(recursive=True)
@@ -153,8 +180,8 @@ class CGroupHandler:
             self.log.debug("window %s:%s %s", app_id, pid, cgroup)
             if cgroup == self._compositor_cgroup:
                 await self.assign_scope(app_id, pid)
-        except Exception as err:
-            self.log.error("Failed to modify cgroup for %s", app_id, exc_info=err)
+        except Exception:
+            self.log.exception("Failed to modify cgroup for %s", app_id)
 
 
 async def main():
