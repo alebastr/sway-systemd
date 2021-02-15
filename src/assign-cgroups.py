@@ -58,12 +58,11 @@ def escape_app_id(app_id: str) -> str:
 
 class CGroupHandler:
     log = logging.getLogger("CGroupHandler")
-    _display = Display()
-    _net_wm_pid = _display.intern_atom("_NET_WM_PID")
 
     def __init__(self, bus: MessageBus, conn: Connection):
         self._bus = bus
         self._conn = conn
+        self._display: Optional[Display] = None
 
     async def connect(self):
         """asynchronous initialization code"""
@@ -99,6 +98,19 @@ class CGroupHandler:
         """Get Application ID"""
         return con.app_id if con.app_id is not None else con.window_class
 
+    def get_net_wm_pid(self, window_id: int) -> int:
+        """Get PID from _NET_WM_PID property of X11 window"""
+        if self._display is None:
+            self._display = Display()
+
+        window = self._display.create_resource_object("window", window_id)
+        _net_wm_pid = self._display.get_atom("_NET_WM_PID")
+        pid = window.get_full_property(_net_wm_pid, X.AnyPropertyType)
+
+        if pid is None:
+            raise Exception("Failed to get PID from _NET_WM_PID")
+        return int(pid.value.tolist()[0])
+
     def get_pid(self, con: Con) -> int:
         """Get PID from IPC response (sway) or _NET_WM_PID (i3)"""
         if con.pid is not None:
@@ -107,11 +119,7 @@ class CGroupHandler:
         if con.window is None:
             raise Exception("Neither PID nor WindowID are present in IPC response")
 
-        window = self._display.create_resource_object("window", con.window)
-        pid = window.get_full_property(self._net_wm_pid, X.AnyPropertyType)
-        if pid is None:
-            raise Exception("Failed to get PID from _NET_WM_PID")
-        return int(pid.value.tolist()[0])
+        return self.get_net_wm_pid(con.window)
 
     async def assign_scope(self, app_id: str, pid: int):
         """
