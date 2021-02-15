@@ -29,7 +29,6 @@ Requires:       python3dist(python-xlib)
 %endif
 Requires:       sway
 Requires:       systemd
-Recommends:     lsof
 Recommends:     /usr/bin/dbus-update-activation-environment
 
 %description

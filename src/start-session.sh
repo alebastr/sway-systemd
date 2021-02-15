@@ -53,19 +53,14 @@ systemctl --user start "$SESSION_TARGET"
 
 # Optionally, wait until the compositor exits and cleanup variables and services.
 if [ "$1" != "--cleanup" ] ||
-    [ -z "$WAYLAND_DISPLAY" ] ||
-    [ -z "$XDG_RUNTIME_DIR" ] ||
-    ! hash lsof 2>/dev/null
+    [ -z "$SWAYSOCK" ] ||
+    ! hash swaymsg 2>/dev/null
 then
     exit 0;
 fi
-# get the compositor pid from wayland socket and wait until it exits
-# XXX: there's a possible race when the compositor exits and another process
-# with the same pid is started. One way to resolve this is to connect to a
-# wayland socket and wait until it's closed.
-COMPOSITOR_PID="$(lsof -t -f -- "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}")"
-echo "waiting until the process ${COMPOSITOR_PID} terminates"
-tail -f /dev/null --pid "${COMPOSITOR_PID}"
+
+# wait until the compositor exits
+swaymsg -t subscribe '["shutdown"]'
 
 # stop the session target and unset the variables
 systemctl --user stop "$SESSION_TARGET"
