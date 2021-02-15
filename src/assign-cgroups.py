@@ -147,11 +147,14 @@ class CGroupHandler:
         """window:new IPC event handler"""
         con = event.container
         app_id = self.get_app_id(con)
-        pid = self.get_pid(con)
-        cgroup = self.get_cgroup(pid)
-        self.log.debug("window %s:%s %s", app_id, pid, cgroup)
-        if cgroup == self._compositor_cgroup:
-            await self.assign_scope(app_id, pid)
+        try:
+            pid = self.get_pid(con)
+            cgroup = self.get_cgroup(pid)
+            self.log.debug("window %s:%s %s", app_id, pid, cgroup)
+            if cgroup == self._compositor_cgroup:
+                await self.assign_scope(app_id, pid)
+        except Exception as err:
+            self.log.error("Failed to modify cgroup for %s", app_id, exc_info=err)
 
 
 async def main():
