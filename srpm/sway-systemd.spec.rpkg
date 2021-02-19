@@ -6,7 +6,7 @@
 %endif
 
 Name:           {{{ git_name }}}
-Version:        0
+Version:        {{{ git_version }}}
 Release:        {{{ git_release }}}%{?dist}
 Summary:        Systemd integration for Sway session
 

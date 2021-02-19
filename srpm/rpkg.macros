@@ -1,9 +1,34 @@
+#!/bin/bash
 # vim ft:sh
+
+function git_tag {
+    git describe --tags --abbrev=0 2>/dev/null | head -n 1
+}
+
+function git_version {
+    tag="$(git_tag)"
+    tag_version="$(echo "$tag" | sed -E -n "s/^v?([^-]+)/\1/p")"
+    if [ -z "$tag_version" ]; then
+        tag_version=0
+    fi
+    output "$tag_version"
+}
+
 function git_release {
-    total_commits="$(git rev-list --all --count)"
-    snap_date="$(date +%+4Y%m%d)"
-    shortcommit="$(git rev-parse --short HEAD)"
-    output "0.$total_commits.${snap_date}git${shortcommit}"
+    latest_tag="$(git_tag)"
+    if [ -n "$latest_tag" ]; then
+        commit_count="$(git rev-list "$latest_tag"..HEAD --count 2>/dev/null)"
+        commit_count=$(( commit_count + 1 ))
+    else
+        commit_count="$(git rev-list HEAD --count 2>/dev/null || printf 0)"
+    fi
+    if [ -n "$latest_tag"  ] && [ "$commit_count" -eq 1 ]; then
+        output "0.1"
+    else
+        snap_date="$(date +%+4Y%m%d)"
+        shortcommit="$(git rev-parse --short HEAD)"
+        output "0.$commit_count.${snap_date}git${shortcommit}"
+    fi
 }
 
 function git_dir_release {
