@@ -60,7 +60,7 @@ This includes several areas of integration:
 %files
 %license LICENSE
 %doc README.md
-%{_libexecdir}/%{name}/start-session.sh
+%{_libexecdir}/%{name}/session.sh
 %{_sysconfdir}/sway/config.d/10-systemd-session.conf
 %{_userunitdir}/sway-session.target
 %if %{with cgroups}

@@ -28,7 +28,7 @@
 #    exits.
 #
 # Arguments:
-#  --cleanup   Run optional cleanup code at compositor exit.
+#  --with-cleanup   Run optional cleanup code at compositor exit.
 #
 # References:
 #  - https://github.com/swaywm/sway/wiki#gtk-applications-take-20-seconds-to-start
@@ -52,7 +52,7 @@ systemctl --user import-environment $VARIABLES
 systemctl --user start "$SESSION_TARGET"
 
 # Optionally, wait until the compositor exits and cleanup variables and services.
-if [ "$1" != "--cleanup" ] ||
+if [ "$1" != "--with-cleanup" ] ||
     [ -z "$SWAYSOCK" ] ||
     ! hash swaymsg 2>/dev/null
 then

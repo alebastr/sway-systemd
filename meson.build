@@ -18,7 +18,7 @@ install_data('sway-session.target',
   install_dir: systemd.get_pkgconfig_variable('systemduserunitdir')
 )
 
-install_data('src/start-session.sh',
+install_data('src/session.sh',
   install_dir: exec_dir,
   install_mode: 'rwxr-xr-x',
 )
