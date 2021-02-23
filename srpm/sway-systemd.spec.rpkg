@@ -34,14 +34,13 @@ Recommends:     /usr/bin/dbus-update-activation-environment
 %description
 %{summary}
 
-The goal of this project is to provide a minimal set of configs and
-scripts required for running Sway in a systemd environment.
+The goal of this project is to provide a minimal set of configuration files
+and scripts required for running Sway in a systemd environment.
 
 This includes several areas of integration:
  - Propagate required variables to the systemd user session environment.
  - Define sway-session.target for starting user services.
- - Place GUI applications into a systemd scopes for systemd-oomd
-   compatibility.
+%{?with_cgroups: - Place GUI applications into a systemd scopes for systemd-oomd compatibility.}
 
 %prep
 {{{ git_setup_macro }}}
@@ -60,12 +59,14 @@ This includes several areas of integration:
 %files
 %license LICENSE
 %doc README.md
+%config(noreplace) %{_sysconfdir}/sway/config.d/10-systemd-session.conf
+%dir %{_libexecdir}/%{name}
 %{_libexecdir}/%{name}/session.sh
-%{_sysconfdir}/sway/config.d/10-systemd-session.conf
 %{_userunitdir}/sway-session.target
+
 %if %{with cgroups}
+%config(noreplace) %{_sysconfdir}/sway/config.d/10-systemd-cgroups.conf
 %{_libexecdir}/%{name}/assign-cgroups.py
-%{_sysconfdir}/sway/config.d/10-systemd-cgroups.conf
 %endif
 
 %changelog
