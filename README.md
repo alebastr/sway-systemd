@@ -11,7 +11,10 @@ This includes several areas of integration:
 
 ## Non-goals
 
-Running the compositor itself as a user service. [sway-services](https://github.com/xdbob/sway-services/) already exists and does exactly that.
+- Running the compositor itself as a user service. [sway-services](https://github.com/xdbob/sway-services/) already exists and does exactly that.
+
+- Managing sway environment. It's hard, opinionated and depends on the way user starts sway, so I don't have a solution that works for everyone and is acceptable for default configuration. See also [#6](https://github.com/alebastr/sway-systemd/issues/6).\
+  The common solutions are `~/.profile` (if your display manager supports that), `~/.pam_environment`, or a wrapper script that sets the variables before starting sway.
 
 ## Components
 
@@ -23,9 +26,9 @@ A systemd user service may depend on or reference `sway-session.target` only if 
 
 ### Session script
 
-The [`session.sh`](./src/session.sh) script is responsible for importing environment variables to systemd and starting session target. When the `--with-cleanup` argument is specified, it also waits in the background until the compositor exits, stops the session target and unsets variables for systemd user session.
+The [`session.sh`](./src/session.sh) script is responsible for importing variables into systemd and dbus activation environments and starting session target. When the `--with-cleanup` argument is specified, it also waits in the background until the compositor exits, stops the session target and unsets variables for systemd user session.
 
-The list of variables and the name of the session target are currently hardcoded and could be changed by editing the script.
+The script itself does not set any variables except `XDG_CURRENT_DESKTOP`; it simply passes the values received from sway. The list of variables and the name of the session target are currently hardcoded and could be changed by editing the script.
 
 For a better description see [comments in the code](./src/session.sh).
 
