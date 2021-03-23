@@ -135,7 +135,7 @@ class CGroupHandler:
 
     def get_pid(self, con: Con) -> int:
         """Get PID from IPC response (sway) or _NET_WM_PID (i3)"""
-        if con.pid is not None:
+        if isinstance(con.pid, int) and con.pid > 0:
             return con.pid
 
         if con.window is None:
