@@ -189,7 +189,10 @@ async def main():
     bus = await MessageBus().connect()
     conn = await Connection(auto_reconnect=False).connect()
     await CGroupHandler(bus, conn).connect()
-    await conn.main()
+    try:
+        await conn.main()
+    except EOFError:
+        logging.exception("Connection to the Sway IPC was lost")
 
 
 if __name__ == "__main__":
