@@ -29,6 +29,7 @@ from psutil import Process
 from Xlib import X
 from Xlib.display import Display
 
+LOG = logging.getLogger("assign-cgroups")
 SD_BUS_NAME = "org.freedesktop.systemd1"
 SD_OBJECT_PATH = "/org/freedesktop/systemd1"
 
@@ -98,7 +99,7 @@ class CGroupHandler:
         self._compositor_pid = get_pid_by_socket(self._conn.socket_path)
         self._compositor_cgroup = self.get_cgroup(self._compositor_pid)
         assert self._compositor_cgroup is not None
-        self.log.info("compositor:%s %s", self._compositor_pid, self._compositor_cgroup)
+        LOG.info("compositor:%s %s", self._compositor_pid, self._compositor_cgroup)
 
         self._conn.on(Event.WINDOW_NEW, self._on_new_window)
         return self
@@ -113,7 +114,7 @@ class CGroupHandler:
                 cgroup = file.read()
             return cgroup.strip().split(":")[-1]
         except OSError:
-            self.log.exception("Error geting cgroup info")
+            LOG.exception("Error geting cgroup info")
         return None
 
     def get_app_id(self, con: Con) -> str:
@@ -177,11 +178,11 @@ class CGroupHandler:
         try:
             pid = self.get_pid(con)
             cgroup = self.get_cgroup(pid)
-            self.log.debug("window %s:%s %s", app_id, pid, cgroup)
+            LOG.debug("window %s(%s) cgroup %s", app_id, pid, cgroup)
             if cgroup == self._compositor_cgroup:
                 await self.assign_scope(app_id, pid)
         except Exception:
-            self.log.exception("Failed to modify cgroup for %s", app_id)
+            LOG.exception("Failed to modify cgroup for %s", app_id)
 
 
 async def main():
