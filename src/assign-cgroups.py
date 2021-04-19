@@ -29,6 +29,13 @@ from psutil import Process
 from Xlib import X
 from Xlib.display import Display
 
+try:
+    # requires python-xlib >= 0.30
+    from Xlib.ext import res as XRes
+except ImportError:
+    XRes = None
+
+
 LOG = logging.getLogger("assign-cgroups")
 SD_BUS_NAME = "org.freedesktop.systemd1"
 SD_OBJECT_PATH = "/org/freedesktop/systemd1"
@@ -79,13 +86,61 @@ def retry_async(exception=Exception, tries=3):
     return retry_async_decorator
 
 
+class XlibHelper:
+    def __init__(self):
+        self.display = Display()
+        self.use_xres = self._try_init_xres()
+
+    def _try_init_xres(self) -> bool:
+        if XRes is None or self.display.query_extension(XRes.extname) is None:
+            LOG.warning(
+                "X-Resource extension is not supported. "
+                + "Process identification for X11 applications will be less reliable."
+            )
+            return False
+        ver = self.display.res_query_version()
+        LOG.info(
+            "X-Resource version %d.%d",
+            ver.server_major,
+            ver.server_minor,
+        )
+        return (ver.server_major, ver.server_minor) >= (1, 2)
+
+    def _get_net_wm_pid(self, wid: int) -> int:
+        """Get PID from _NET_WM_PID property of X11 window"""
+        window = self.display.create_resource_object("window", wid)
+        net_wm_pid = self.display.get_atom("_NET_WM_PID")
+        pid = window.get_full_property(net_wm_pid, X.AnyPropertyType)
+
+        if pid is None:
+            raise Exception("Failed to get PID from _NET_WM_PID")
+        return int(pid.value.tolist()[0])
+
+    def _get_xres_client_id(self, wid: int) -> int:
+        """Get PID from X server via X-Resource extension"""
+        r = self.display.res_query_client_ids(
+            [{"client": wid, "mask": XRes.LocalClientPIDMask}]
+        )
+        for id in r.ids:
+            if id.spec.client > 0 and id.spec.mask == XRes.LocalClientPIDMask:
+                for value in id.value:
+                    return value
+        raise Exception("Failed to get PID via X-Resource extension")
+
+    def get_window_pid(self, wid: int) -> Optional[int]:
+        if self.use_xres:
+            return self._get_xres_client_id(wid)
+        else:
+            return self._get_net_wm_pid(wid)
+
+
 class CGroupHandler:
     def __init__(self, bus: MessageBus, conn: Connection):
         self._bus = bus
         self._conn = conn
-        self._display: Optional[Display] = None
+        self._xhelper: Optional[XlibHelper] = None
         try:
-            self._display = Display()
+            self._xhelper = XlibHelper()
         except Exception as exc:
             LOG.warning("Failed to connect to X11 display: %s", exc)
 
@@ -123,26 +178,13 @@ class CGroupHandler:
         """Get Application ID"""
         return con.app_id if con.app_id is not None else con.window_class
 
-    def get_net_wm_pid(self, window_id: int) -> Optional[int]:
-        """Get PID from _NET_WM_PID property of X11 window"""
-        if self._display is None:
-            return None
-
-        window = self._display.create_resource_object("window", window_id)
-        _net_wm_pid = self._display.get_atom("_NET_WM_PID")
-        pid = window.get_full_property(_net_wm_pid, X.AnyPropertyType)
-
-        if pid is None:
-            raise Exception("Failed to get PID from _NET_WM_PID")
-        return int(pid.value.tolist()[0])
-
     def get_pid(self, con: Con) -> Optional[int]:
-        """Get PID from IPC response (sway) or _NET_WM_PID (i3)"""
+        """Get PID from IPC response (sway), X-Resource or _NET_WM_PID (i3)"""
         if isinstance(con.pid, int) and con.pid > 0:
             return con.pid
 
-        if con.window is not None:
-            return self.get_net_wm_pid(con.window)
+        if con.window is not None and self._xhelper is not None:
+            return self._xhelper.get_window_pid(con.window)
 
         return None
 
