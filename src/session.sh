@@ -17,14 +17,18 @@
 #    right value of the XDG_CURRENT_DESKTOP variable within the login session,
 #    therefore the script will ensure that it is always set to `sway`.
 #
-# 3. The common way to autostart a systemd service along with the desktop
+# 3. GUI applications started as a systemd service (or via xdg-autostart-generator)
+#    may rely on the XDG_SESSION_TYPE variable to select the backend.
+#    Ensure that it is always set to `wayland`.
+#
+# 4. The common way to autostart a systemd service along with the desktop
 #    environment is to add it to a `graphical-session.target`. However, systemd
 #    forbids starting the graphical session target directly and encourages use
 #    of an environment-specific target units. Therefore, the integration
 #    package here provides and uses `sway-session.target` which would bind to
 #    the `graphical-session.target`.
 #
-# 4. Optionally, stop the target and unset the variables when the compositor
+# 5. Optionally, stop the target and unset the variables when the compositor
 #    exits.
 #
 # Arguments:
@@ -37,7 +41,8 @@
 #  - https://systemd.io/DESKTOP_ENVIRONMENTS/
 #
 export XDG_CURRENT_DESKTOP=sway
-VARIABLES="DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+export XDG_SESSION_TYPE=wayland
+VARIABLES="DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE"
 SESSION_TARGET="sway-session.target"
 
 # DBus activation environment is independent from systemd. While most of
