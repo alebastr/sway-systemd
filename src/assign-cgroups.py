@@ -80,12 +80,14 @@ def retry_async(exception=Exception, tries=3):
 
 
 class CGroupHandler:
-    log = logging.getLogger("CGroupHandler")
-
     def __init__(self, bus: MessageBus, conn: Connection):
         self._bus = bus
         self._conn = conn
         self._display: Optional[Display] = None
+        try:
+            self._display = Display()
+        except Exception as exc:
+            LOG.warning("Failed to connect to X11 display: %s", exc)
 
     async def connect(self):
         """asynchronous initialization code"""
@@ -121,10 +123,10 @@ class CGroupHandler:
         """Get Application ID"""
         return con.app_id if con.app_id is not None else con.window_class
 
-    def get_net_wm_pid(self, window_id: int) -> int:
+    def get_net_wm_pid(self, window_id: int) -> Optional[int]:
         """Get PID from _NET_WM_PID property of X11 window"""
         if self._display is None:
-            self._display = Display()
+            return None
 
         window = self._display.create_resource_object("window", window_id)
         _net_wm_pid = self._display.get_atom("_NET_WM_PID")
@@ -134,15 +136,15 @@ class CGroupHandler:
             raise Exception("Failed to get PID from _NET_WM_PID")
         return int(pid.value.tolist()[0])
 
-    def get_pid(self, con: Con) -> int:
+    def get_pid(self, con: Con) -> Optional[int]:
         """Get PID from IPC response (sway) or _NET_WM_PID (i3)"""
         if isinstance(con.pid, int) and con.pid > 0:
             return con.pid
 
-        if con.window is None:
-            raise Exception("Neither PID nor WindowID are present in IPC response")
+        if con.window is not None:
+            return self.get_net_wm_pid(con.window)
 
-        return self.get_net_wm_pid(con.window)
+        return None
 
     @retry_async(exception=DBusError, tries=3)
     async def assign_scope(self, app_id: str, pid: int):
@@ -177,6 +179,9 @@ class CGroupHandler:
         app_id = self.get_app_id(con)
         try:
             pid = self.get_pid(con)
+            if pid is None:
+                LOG.warning("Failed to get pid for %s", app_id)
+                return
             cgroup = self.get_cgroup(pid)
             LOG.debug("window %s(%s) cgroup %s", app_id, pid, cgroup)
             if cgroup == self._compositor_cgroup:
