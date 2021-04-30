@@ -146,6 +146,11 @@ class CGroupHandler:
 
         return None
 
+    def cgroup_change_needed(self, cgroup: Optional[str]) -> bool:
+        """Check criteria for assigning current app into an isolated cgroup"""
+        # TODO: check for known launchers
+        return cgroup == self._compositor_cgroup
+
     @retry_async(exception=DBusError, tries=3)
     async def assign_scope(self, app_id: str, pid: int):
         """
@@ -163,7 +168,7 @@ class CGroupHandler:
         pids = [pid] + [
             x.pid
             for x in proc.children(recursive=True)
-            if self.get_cgroup(x.pid) == self._compositor_cgroup
+            if self.cgroup_change_needed(self.get_cgroup(x.pid))
         ]
 
         await self._sd_manager.call_start_transient_unit(
@@ -184,7 +189,7 @@ class CGroupHandler:
                 return
             cgroup = self.get_cgroup(pid)
             LOG.debug("window %s(%s) cgroup %s", app_id, pid, cgroup)
-            if cgroup == self._compositor_cgroup:
+            if self.cgroup_change_needed(cgroup):
                 await self.assign_scope(app_id, pid)
         except Exception:
             LOG.exception("Failed to modify cgroup for %s", app_id)
