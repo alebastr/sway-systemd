@@ -12,6 +12,7 @@ services for such background apps.
 
 Dependencies: dbus-next, i3ipc, psutil, python-xlib
 """
+import argparse
 import asyncio
 import logging
 import socket
@@ -249,5 +250,17 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    parser = argparse.ArgumentParser(
+        description="Assign CGroups to apps in compositors with i3 IPC protocol support"
+    )
+    parser.add_argument(
+        "-l",
+        "--loglevel",
+        choices=["critical", "error", "warning", "info", "debug"],
+        default="info",
+        dest="loglevel",
+        help="set logging level",
+    )
+    args = parser.parse_args()
+    logging.basicConfig(level=args.loglevel.upper())
     asyncio.run(main())
