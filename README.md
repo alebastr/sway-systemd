@@ -54,7 +54,12 @@ you can tell systemd that all Firefox processes combined are not allowed to use 
 
 Session script calls these commands: `swaymsg`, `systemctl`, `dbus-update-activation-environment`.
 
-Cgroups script uses following python packages: [`dbus-next`](https://pypi.org/project/dbus-next/), [`i3ipc`](https://pypi.org/project/i3ipc/), [`psutil`](https://pypi.org/project/psutil/), [`python-xlib`](https://pypi.org/project/python-xlib/)
+Cgroups script uses following python packages:
+[`dbus-next`](https://pypi.org/project/dbus-next/),
+[`i3ipc`](https://pypi.org/project/i3ipc/),
+[`psutil`](https://pypi.org/project/psutil/),
+[`tenacity`](https://pypi.org/project/tenacity/),
+[`python-xlib`](https://pypi.org/project/python-xlib/)
 
 ### Installing with meson
 

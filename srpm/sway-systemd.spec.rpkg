@@ -25,6 +25,7 @@ BuildRequires:  systemd-rpm-macros
 Requires:       python3dist(dbus-next)
 Requires:       python3dist(i3ipc)
 Requires:       python3dist(psutil)
+Requires:       python3dist(tenacity)
 Requires:       python3dist(python-xlib)
 %endif
 Requires:       sway

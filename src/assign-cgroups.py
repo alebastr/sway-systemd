@@ -10,15 +10,13 @@ launches and would fail to detect background apps or special surfaces.
 Therefore it's recommended to supplement the script with use of systemd user
 services for such background apps.
 
-Dependencies: dbus-next, i3ipc, psutil, python-xlib
+Dependencies: dbus-next, i3ipc, psutil, tenacity, python-xlib
 """
 import argparse
 import asyncio
 import logging
 import socket
 import struct
-
-from functools import wraps
 from typing import Optional
 
 from dbus_next import Variant
@@ -27,6 +25,7 @@ from dbus_next.errors import DBusError
 from i3ipc import Event
 from i3ipc.aio import Con, Connection
 from psutil import Process
+from tenacity import retry, retry_if_exception_type, stop_after_attempt
 from Xlib import X
 from Xlib.display import Display
 
@@ -65,26 +64,6 @@ def get_pid_by_socket(sockpath: str) -> int:
 def escape_app_id(app_id: str) -> str:
     """Escape app_id for systemd APIs"""
     return app_id.replace("-", "\\x2d")
-
-
-def retry_async(exception=Exception, tries=3):
-    def retry_async_decorator(func):
-        @wraps(func)
-        async def decorated(*args, **kwargs):
-            err = None
-            for i in range(tries):
-                try:
-                    return await func(*args, **kwargs)
-                except exception as exc:
-                    err = exc
-                    logging.warning(
-                        "retry: %s failed (%d/%d): %s", func.__name__, i + 1, tries, err
-                    )
-            raise err
-
-        return decorated
-
-    return retry_async_decorator
 
 
 class XlibHelper:
@@ -194,7 +173,11 @@ class CGroupHandler:
         # TODO: check for known launchers
         return cgroup == self._compositor_cgroup
 
-    @retry_async(exception=DBusError, tries=3)
+    @retry(
+        reraise=True,
+        retry=retry_if_exception_type(DBusError),
+        stop=stop_after_attempt(3),
+    )
     async def assign_scope(self, app_id: str, pid: int):
         """
         Assign process (and all unassigned children) to the
