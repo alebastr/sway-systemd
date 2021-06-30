@@ -228,7 +228,7 @@ async def main():
     await CGroupHandler(bus, conn).connect()
     try:
         await conn.main()
-    except EOFError:
+    except (ConnectionError, EOFError):
         logging.exception("Connection to the Sway IPC was lost")
 
 
