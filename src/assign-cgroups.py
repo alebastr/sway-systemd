@@ -39,6 +39,12 @@ except ImportError:
 LOG = logging.getLogger("assign-cgroups")
 SD_BUS_NAME = "org.freedesktop.systemd1"
 SD_OBJECT_PATH = "/org/freedesktop/systemd1"
+SD_SLICE_FORMAT = "app-{app_id}.slice"
+SD_UNIT_FORMAT = "app-{app_id}-{unique}.scope"
+# Ids of known launcher applications that are not special surfaces. When the app is
+# started using one of those, it should be moved to a new cgroup.
+# Launcher should only be listed here if it creates cgroup of its own.
+LAUNCHER_APPS = ["nwggrid"]
 
 
 def get_cgroup(pid: int) -> Optional[str]:
@@ -173,7 +179,11 @@ class CGroupHandler:
 
     def cgroup_change_needed(self, cgroup: Optional[str]) -> bool:
         """Check criteria for assigning current app into an isolated cgroup"""
-        # TODO: check for known launchers
+        if cgroup is None:
+            return False
+        for launcher in LAUNCHER_APPS:
+            if SD_SLICE_FORMAT.format(app_id=launcher) in cgroup:
+                return True
         return cgroup == self._compositor_cgroup
 
     @retry(
@@ -187,8 +197,8 @@ class CGroupHandler:
         app-{app_id}.slice/app{app_id}-{pid}.scope cgroup
         """
         app_id = escape_app_id(app_id)
-        sd_unit = f"app-{app_id}-{proc.pid}.scope"
-        sd_slice = f"app-{app_id}.slice"
+        sd_slice = SD_SLICE_FORMAT.format(app_id=app_id)
+        sd_unit = SD_UNIT_FORMAT.format(app_id=app_id, unique=proc.pid)
         # Collect child processes as systemd assigns a scope only to explicitly
         # specified PIDs.
         # There's a risk of race as the child processes may exit by the time dbus call
