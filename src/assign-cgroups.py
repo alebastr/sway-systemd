@@ -81,6 +81,8 @@ def escape_app_id(app_id: str) -> str:
 
 
 class XlibHelper:
+    """Utility class for some X11-specific logic"""
+
     def __init__(self):
         self.display = Display()
         self.use_xres = self._try_init_xres()
@@ -89,7 +91,7 @@ class XlibHelper:
         if XRes is None or self.display.query_extension(XRes.extname) is None:
             LOG.warning(
                 "X-Resource extension is not supported. "
-                + "Process identification for X11 applications will be less reliable."
+                "Process identification for X11 applications will be less reliable."
             )
             return False
         ver = self.display.res_query_version()
@@ -100,7 +102,7 @@ class XlibHelper:
         )
         return (ver.server_major, ver.server_minor) >= (1, 2)
 
-    def _get_net_wm_pid(self, wid: int) -> int:
+    def get_net_wm_pid(self, wid: int) -> int:
         """Get PID from _NET_WM_PID property of X11 window"""
         window = self.display.create_resource_object("window", wid)
         net_wm_pid = self.display.get_atom("_NET_WM_PID")
@@ -110,31 +112,35 @@ class XlibHelper:
             raise Exception("Failed to get PID from _NET_WM_PID")
         return int(pid.value.tolist()[0])
 
-    def _get_xres_client_id(self, wid: int) -> int:
+    def get_xres_client_id(self, wid: int) -> int:
         """Get PID from X server via X-Resource extension"""
-        r = self.display.res_query_client_ids(
+        res = self.display.res_query_client_ids(
             [{"client": wid, "mask": XRes.LocalClientPIDMask}]
         )
-        for id in r.ids:
-            if id.spec.client > 0 and id.spec.mask == XRes.LocalClientPIDMask:
-                for value in id.value:
+        for cid in res.ids:
+            if cid.spec.client > 0 and cid.spec.mask == XRes.LocalClientPIDMask:
+                for value in cid.value:
                     return value
         raise Exception("Failed to get PID via X-Resource extension")
 
     def get_window_pid(self, wid: int) -> Optional[int]:
+        """Get PID of X11 window"""
         if self.use_xres:
-            return self._get_xres_client_id(wid)
-        else:
-            return self._get_net_wm_pid(wid)
+            return self.get_xres_client_id(wid)
+
+        return self.get_net_wm_pid(wid)
 
 
 class CGroupHandler:
+    """Main logic: handle i3/sway IPC events and start systemd transient units."""
+
     def __init__(self, bus: MessageBus, conn: Connection):
         self._bus = bus
         self._conn = conn
         self._xhelper: Optional[XlibHelper] = None
         try:
             self._xhelper = XlibHelper()
+        # pylint: disable=broad-except
         except Exception as exc:
             LOG.warning("Failed to connect to X11 display: %s", exc)
 
@@ -217,6 +223,7 @@ class CGroupHandler:
             LOG.debug("window %s(%s) cgroup %s", app_id, proc.pid, cgroup)
             if self.cgroup_change_needed(cgroup):
                 await self.assign_scope(app_id, proc)
+        # pylint: disable=broad-except
         except Exception:
             LOG.exception("Failed to modify cgroup for %s", app_id)
 
