@@ -215,6 +215,9 @@ class CGroupHandler:
             [["PIDs", Variant("au", pids)], ["Slice", Variant("s", sd_slice)]],
             [],
         )
+        LOG.debug(
+            "window %s successfully assigned to cgroup %s/%s", app_id, sd_slice, sd_unit
+        )
 
     async def _on_new_window(self, _: Connection, event: Event):
         """window:new IPC event handler"""
