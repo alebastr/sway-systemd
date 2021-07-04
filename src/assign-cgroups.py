@@ -41,6 +41,20 @@ SD_BUS_NAME = "org.freedesktop.systemd1"
 SD_OBJECT_PATH = "/org/freedesktop/systemd1"
 
 
+def get_cgroup(pid: int) -> Optional[str]:
+    """
+    Get cgroup identifier for the process specified by pid.
+    Assumes cgroups v2 unified hierarchy.
+    """
+    try:
+        with open(f"/proc/{pid}/cgroup", "r") as file:
+            cgroup = file.read()
+        return cgroup.strip().split(":")[-1]
+    except OSError:
+        LOG.exception("Error geting cgroup info")
+    return None
+
+
 def get_pid_by_socket(sockpath: str) -> int:
     """
     getsockopt (..., SO_PEERCRED, ...) returns the following structure
@@ -134,25 +148,12 @@ class CGroupHandler:
         self._sd_manager = self._sd_proxy.get_interface(f"{SD_BUS_NAME}.Manager")
 
         self._compositor_pid = get_pid_by_socket(self._conn.socket_path)
-        self._compositor_cgroup = self.get_cgroup(self._compositor_pid)
+        self._compositor_cgroup = get_cgroup(self._compositor_pid)
         assert self._compositor_cgroup is not None
         LOG.info("compositor:%s %s", self._compositor_pid, self._compositor_cgroup)
 
         self._conn.on(Event.WINDOW_NEW, self._on_new_window)
         return self
-
-    def get_cgroup(self, pid: int) -> Optional[str]:
-        """
-        Get cgroup identifier for the process specified by pid.
-        Assumes cgroups v2 unified hierarchy.
-        """
-        try:
-            with open(f"/proc/{pid}/cgroup", "r") as file:
-                cgroup = file.read()
-            return cgroup.strip().split(":")[-1]
-        except OSError:
-            LOG.exception("Error geting cgroup info")
-        return None
 
     def get_app_id(self, con: Con) -> str:
         """Get Application ID"""
@@ -194,7 +195,7 @@ class CGroupHandler:
         pids = [pid] + [
             x.pid
             for x in proc.children(recursive=True)
-            if self.cgroup_change_needed(self.get_cgroup(x.pid))
+            if self.cgroup_change_needed(get_cgroup(x.pid))
         ]
 
         await self._sd_manager.call_start_transient_unit(
@@ -213,7 +214,7 @@ class CGroupHandler:
             if pid is None:
                 LOG.warning("Failed to get pid for %s", app_id)
                 return
-            cgroup = self.get_cgroup(pid)
+            cgroup = get_cgroup(pid)
             LOG.debug("window %s(%s) cgroup %s", app_id, pid, cgroup)
             if self.cgroup_change_needed(cgroup):
                 await self.assign_scope(app_id, pid)
