@@ -155,10 +155,6 @@ class CGroupHandler:
         self._conn.on(Event.WINDOW_NEW, self._on_new_window)
         return self
 
-    def get_app_id(self, con: Con) -> str:
-        """Get Application ID"""
-        return con.app_id if con.app_id is not None else con.window_class
-
     def get_pid(self, con: Con) -> Optional[int]:
         """Get PID from IPC response (sway), X-Resource or _NET_WM_PID (i3)"""
         if isinstance(con.pid, int) and con.pid > 0:
@@ -179,20 +175,19 @@ class CGroupHandler:
         retry=retry_if_exception_type(DBusError),
         stop=stop_after_attempt(3),
     )
-    async def assign_scope(self, app_id: str, pid: int):
+    async def assign_scope(self, app_id: str, proc: Process):
         """
         Assign process (and all unassigned children) to the
         app-{app_id}.slice/app{app_id}-{pid}.scope cgroup
         """
         app_id = escape_app_id(app_id)
-        sd_unit = f"app-{app_id}-{pid}.scope"
+        sd_unit = f"app-{app_id}-{proc.pid}.scope"
         sd_slice = f"app-{app_id}.slice"
-        proc = Process(pid)
         # Collect child processes as systemd assigns a scope only to explicitly
         # specified PIDs.
         # There's a risk of race as the child processes may exit by the time dbus call
-        # reaches systemd, hence the @retry_async decorator is applied to the method.
-        pids = [pid] + [
+        # reaches systemd, hence the @retry decorator is applied to the method.
+        pids = [proc.pid] + [
             x.pid
             for x in proc.children(recursive=True)
             if self.cgroup_change_needed(get_cgroup(x.pid))
@@ -208,16 +203,20 @@ class CGroupHandler:
     async def _on_new_window(self, _: Connection, event: Event):
         """window:new IPC event handler"""
         con = event.container
-        app_id = self.get_app_id(con)
+        app_id = con.app_id if con.app_id else con.window_class
         try:
             pid = self.get_pid(con)
             if pid is None:
                 LOG.warning("Failed to get pid for %s", app_id)
                 return
-            cgroup = get_cgroup(pid)
-            LOG.debug("window %s(%s) cgroup %s", app_id, pid, cgroup)
+            proc = Process(pid)
+            cgroup = get_cgroup(proc.pid)
+            # some X11 apps don't set WM_CLASS. fallback to process name
+            if app_id is None:
+                app_id = proc.name()
+            LOG.debug("window %s(%s) cgroup %s", app_id, proc.pid, cgroup)
             if self.cgroup_change_needed(cgroup):
-                await self.assign_scope(app_id, pid)
+                await self.assign_scope(app_id, proc)
         except Exception:
             LOG.exception("Failed to modify cgroup for %s", app_id)
 
