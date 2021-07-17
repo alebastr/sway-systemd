@@ -31,9 +31,6 @@
 # 5. Optionally, stop the target and unset the variables when the compositor
 #    exits.
 #
-# Arguments:
-#  --with-cleanup   Run optional cleanup code at compositor exit.
-#
 # References:
 #  - https://github.com/swaywm/sway/wiki#gtk-applications-take-20-seconds-to-start
 #  - https://github.com/emersion/xdg-desktop-portal-wlr/wiki/systemd-user-services,-pam,-and-environment-variables
@@ -44,6 +41,43 @@ export XDG_CURRENT_DESKTOP=sway
 export XDG_SESSION_TYPE=wayland
 VARIABLES="DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE"
 SESSION_TARGET="sway-session.target"
+WITH_CLEANUP=""
+
+print_usage() {
+    cat <<EOH
+Usage:
+  --add-env NAME, -E NAME
+                    Add specified variable to the subset of environment passed
+                    to the user session. Can be specified multiple times.
+  --all-environment Copy all available environment variables to the systemd
+                    user session.
+  --with-cleanup    Run optional cleanup code at compositor exit.
+EOH
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --help)
+        print_usage
+        exit 0 ;;
+    --all-environment)
+        VARIABLES="" ;;
+    --add-env=?*)
+        VARIABLES="${VARIABLES} ${1#*=}" ;;
+    --add-env | -E)
+        shift
+        VARIABLES="${VARIABLES} ${1}" ;;
+    --with-cleanup)
+        WITH_CLEANUP=1 ;;
+    -*)
+        echo "Unexpected option: $1" 1>&2
+        print_usage
+        exit 1 ;;
+    *)
+        break ;;
+    esac
+    shift
+done
 
 # DBus activation environment is independent from systemd. While most of
 # dbus-activated services are already using `SystemdService` directive, some
@@ -59,7 +93,7 @@ systemctl --user import-environment $VARIABLES
 systemctl --user start "$SESSION_TARGET"
 
 # Optionally, wait until the compositor exits and cleanup variables and services.
-if [ "$1" != "--with-cleanup" ] ||
+if [ -z "$WITH_CLEANUP" ] ||
     [ -z "$SWAYSOCK" ] ||
     ! hash swaymsg 2>/dev/null
 then
