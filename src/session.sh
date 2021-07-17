@@ -66,12 +66,17 @@ then
     exit 0;
 fi
 
+# declare cleanup handler and run it on script termination via kill or Ctrl-C
+session_cleanup () {
+    # stop the session target and unset the variables
+    systemctl --user stop "$SESSION_TARGET"
+    if [ -n "$VARIABLES" ]; then
+        # shellcheck disable=SC2086
+        systemctl --user unset-environment $VARIABLES
+    fi
+}
+trap session_cleanup INT TERM
 # wait until the compositor exits
 swaymsg -t subscribe '["shutdown"]'
-
-# stop the session target and unset the variables
-systemctl --user stop "$SESSION_TARGET"
-if [ -n "$VARIABLES" ]; then
-    # shellcheck disable=SC2086
-    systemctl --user unset-environment $VARIABLES
-fi
+# run cleanup handler on normal exit
+session_cleanup
