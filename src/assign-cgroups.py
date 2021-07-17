@@ -44,7 +44,17 @@ SD_UNIT_FORMAT = "app-{app_id}-{unique}.scope"
 # Ids of known launcher applications that are not special surfaces. When the app is
 # started using one of those, it should be moved to a new cgroup.
 # Launcher should only be listed here if it creates cgroup of its own.
-LAUNCHER_APPS = ["nwggrid"]
+LAUNCHER_APPS = ["nwgbar", "nwgdmenu", "nwggrid"]
+
+
+def escape_app_id(app_id: str) -> str:
+    """Escape app_id for systemd APIs"""
+    return app_id.replace("-", "\\x2d")
+
+
+LAUNCHER_APP_CGROUPS = [
+    SD_SLICE_FORMAT.format(app_id=escape_app_id(app)) for app in LAUNCHER_APPS
+]
 
 
 def get_cgroup(pid: int) -> Optional[str]:
@@ -79,11 +89,6 @@ def get_pid_by_socket(sockpath: str) -> int:
         )
     pid, _, _ = struct.unpack("iII", ucred)
     return pid
-
-
-def escape_app_id(app_id: str) -> str:
-    """Escape app_id for systemd APIs"""
-    return app_id.replace("-", "\\x2d")
 
 
 class XlibHelper:
@@ -181,8 +186,8 @@ class CGroupHandler:
         """Check criteria for assigning current app into an isolated cgroup"""
         if cgroup is None:
             return False
-        for launcher in LAUNCHER_APPS:
-            if SD_SLICE_FORMAT.format(app_id=launcher) in cgroup:
+        for launcher in LAUNCHER_APP_CGROUPS:
+            if launcher in cgroup:
                 return True
         return cgroup == self._compositor_cgroup
 
