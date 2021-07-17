@@ -50,9 +50,11 @@ SESSION_TARGET="sway-session.target"
 # still don't and thus we should set the dbus environment with a separate
 # command.
 if hash dbus-update-activation-environment 2>/dev/null; then
-    dbus-update-activation-environment --systemd $VARIABLES
+    # shellcheck disable=SC2086
+    dbus-update-activation-environment --systemd ${VARIABLES:- --all}
 fi
 
+# shellcheck disable=SC2086
 systemctl --user import-environment $VARIABLES
 systemctl --user start "$SESSION_TARGET"
 
@@ -69,4 +71,7 @@ swaymsg -t subscribe '["shutdown"]'
 
 # stop the session target and unset the variables
 systemctl --user stop "$SESSION_TARGET"
-systemctl --user unset-environment $VARIABLES
+if [ -n "$VARIABLES" ]; then
+    # shellcheck disable=SC2086
+    systemctl --user unset-environment $VARIABLES
+fi
