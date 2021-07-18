@@ -46,11 +46,10 @@ WITH_CLEANUP=""
 print_usage() {
     cat <<EOH
 Usage:
+  --help            Show this help message and exit.
   --add-env NAME, -E NAME
-                    Add specified variable to the subset of environment passed
+                    Add a variable name to the subset of environment passed
                     to the user session. Can be specified multiple times.
-  --all-environment Copy all available environment variables to the systemd
-                    user session.
   --with-cleanup    Run optional cleanup code at compositor exit.
 EOH
 }
@@ -60,6 +59,10 @@ while [ $# -gt 0 ]; do
     --help)
         print_usage
         exit 0 ;;
+    # The following flag is intentionally not exposed in the usage info:
+    #  - I don't believe that's the right or safe thing to do;
+    #  - systemd upstream is of the same opinion and has already deprecated
+    #    the ability to import the full environment (systemd/systemd#18137)
     --all-environment)
         VARIABLES="" ;;
     --add-env=?*)
