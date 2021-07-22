@@ -46,9 +46,14 @@ For example, by creating `$XDG_CONFIG_HOME/systemd/user/app-firefox.slice.d/over
 MemoryHigh=2G
 ```
 
-you can tell systemd that all Firefox processes combined are not allowed to use more than 2 Gb of memory. See `systemd.resource-control(5)` for other available resource control options.
+you can tell systemd that all Firefox processes combined are not allowed to use more than 2 Gb of memory.
+See [`systemd.resource-control(5)`](https://www.freedesktop.org/software/systemd/man/systemd.resource-control.html) for other available resource control options.
 
 ## Installation
+
+<a href="https://repology.org/project/sway-systemd/versions">
+    <img src="https://repology.org/badge/vertical-allrepos/sway-systemd.svg" alt="Packaging status" align="right">
+</a>
 
 ### Dependencies
 
