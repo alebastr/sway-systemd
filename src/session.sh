@@ -91,6 +91,9 @@ if hash dbus-update-activation-environment 2>/dev/null; then
     dbus-update-activation-environment --systemd ${VARIABLES:- --all}
 fi
 
+# reset failed state of all user units
+systemctl --user reset-failed
+
 # shellcheck disable=SC2086
 systemctl --user import-environment $VARIABLES
 systemctl --user start "$SESSION_TARGET"
