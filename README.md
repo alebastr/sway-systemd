@@ -15,6 +15,8 @@ This includes several areas of integration:
 
 - Managing sway environment. It's hard, opinionated and depends on the way user starts sway, so I don't have a solution that works for everyone and is acceptable for default configuration. See also [#6](https://github.com/alebastr/sway-systemd/issues/6).\
   The common solutions are `~/.profile` (if your display manager supports that), `~/.pam_environment`, or a wrapper script that sets the variables before starting sway.
+ 
+ - Supporting multiple concurrent sway sessions for the same user. It's uncommon and doing so would cause problems for which there are no easy solutions: To make this work, we set `WAYLAND_DISPLAY` with a `systemd --user` sesssion. This environment variable only accurate per-session, while `systemd --user` sessions are per-user. If the user starts a second Sway instance on the same machine, the new instance would overwrite this value, which could cause some services to break in the first sesssion if they were to read the variable after the second session starts.
 
 ## Components
 
