@@ -82,6 +82,16 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# check if another session is already active:
+# either the target is active or the DISPLAY variables are set in systemd
+if systemctl --user -q is-active "$SESSION_TARGET" ||
+    (test -n "$WITH_CLEANUP" && test -n "$VARIABLES" &&
+        systemctl --user show-environment | grep -qE '^(WAYLAND_)?DISPLAY=')
+then
+    echo "Another session found; refusing to overwrite the variables"
+    exit 1
+fi
+
 # DBus activation environment is independent from systemd. While most of
 # dbus-activated services are already using `SystemdService` directive, some
 # still don't and thus we should set the dbus environment with a separate
