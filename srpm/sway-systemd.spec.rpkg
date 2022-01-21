@@ -1,19 +1,15 @@
 # vim: ft=spec
-%if 0%{?fedora} >= 34
 %bcond_without  cgroups
-%else
-%bcond_with     cgroups
-%endif
+%global srcname {{{ git_name }}}
 
-Name:           {{{ git_name }}}
+Name:           {{{ git_name append="-git" }}}
 Version:        {{{ git_version }}}
 Release:        {{{ git_release }}}%{?dist}
 Summary:        Systemd integration for Sway session
 
 License:        MIT
 URL:            https://github.com/alebastr/sway-systemd
-VCS:            {{{ git_vcs }}}
-Source0:        {{{ git_pack }}}
+Source0:        {{{ git_pack path=$(git rev-parse --show-toplevel) }}}
 
 BuildArch:      noarch
 
@@ -21,19 +17,21 @@ BuildRequires:  meson
 BuildRequires:  pkgconfig(systemd)
 BuildRequires:  systemd-rpm-macros
 
+Conflicts:      %{srcname}
+
 %if %{with cgroups}
 Requires:       python3dist(dbus-next)
 Requires:       python3dist(i3ipc)
 Requires:       python3dist(psutil)
-Requires:       python3dist(tenacity)
 Requires:       python3dist(python-xlib)
+Requires:       python3dist(tenacity)
 %endif
 Requires:       sway
 Requires:       systemd
 Recommends:     /usr/bin/dbus-update-activation-environment
 
 %description
-%{summary}
+%{summary}.
 
 The goal of this project is to provide a minimal set of configuration files
 and scripts required for running Sway in a systemd environment.
@@ -44,7 +42,7 @@ This includes several areas of integration:
 %{?with_cgroups: - Place GUI applications into a systemd scopes for systemd-oomd compatibility.}
 
 %prep
-{{{ git_setup_macro }}}
+{{{ git_setup_macro path=$(git rev-parse --show-toplevel) }}}
 
 
 %build
@@ -61,13 +59,13 @@ This includes several areas of integration:
 %license LICENSE
 %doc README.md
 %config(noreplace) %{_sysconfdir}/sway/config.d/10-systemd-session.conf
-%dir %{_libexecdir}/%{name}
-%{_libexecdir}/%{name}/session.sh
+%dir %{_libexecdir}/%{srcname}
+%{_libexecdir}/%{srcname}/session.sh
 %{_userunitdir}/sway-session.target
 
 %if %{with cgroups}
 %config(noreplace) %{_sysconfdir}/sway/config.d/10-systemd-cgroups.conf
-%{_libexecdir}/%{name}/assign-cgroups.py
+%{_libexecdir}/%{srcname}/assign-cgroups.py
 %endif
 
 %changelog
