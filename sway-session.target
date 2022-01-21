@@ -1,6 +1,8 @@
 [Unit]
-Description=sway session
+Description=Sway session
 Documentation=man:systemd.special(7)
+RefuseManualStart=yes
+StopWhenUnneeded=yes
 BindsTo=graphical-session.target
 Wants=graphical-session-pre.target
 After=graphical-session-pre.target

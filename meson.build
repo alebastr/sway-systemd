@@ -14,7 +14,9 @@ exec_dir = join_paths(
 conf_data = configuration_data()
 conf_data.set('execdir', exec_dir)
 
-install_data('sway-session.target',
+install_data(
+  'sway-session.target',
+  'sway-session@.target',
   install_dir: systemd.get_pkgconfig_variable('systemduserunitdir')
 )
 

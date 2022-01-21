@@ -62,6 +62,7 @@ This includes several areas of integration:
 %dir %{_libexecdir}/%{srcname}
 %{_libexecdir}/%{srcname}/session.sh
 %{_userunitdir}/sway-session.target
+%{_userunitdir}/sway-session@.target
 
 %if %{with cgroups}
 %config(noreplace) %{_sysconfdir}/sway/config.d/10-systemd-cgroups.conf

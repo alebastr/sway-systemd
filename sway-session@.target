@@ -1,0 +1,5 @@
+[Unit]
+Description=Sway session on %i
+Documentation=man:systemd.special(7)
+BindsTo=sway-session.target
+RefuseManualStart=no

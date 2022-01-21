@@ -40,7 +40,7 @@
 export XDG_CURRENT_DESKTOP=sway
 export XDG_SESSION_TYPE=wayland
 VARIABLES="DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE"
-SESSION_TARGET="sway-session.target"
+SESSION_TARGET="sway-session@$WAYLAND_DISPLAY.target"
 WITH_CLEANUP=""
 
 print_usage() {
@@ -84,7 +84,7 @@ done
 
 # check if another session is already active:
 # either the target is active or the DISPLAY variables are set in systemd
-if systemctl --user -q is-active "$SESSION_TARGET" ||
+if systemctl --user -q is-active "${SESSION_TARGET%%@*}.target" ||
     (test -n "$WITH_CLEANUP" && test -n "$VARIABLES" &&
         systemctl --user show-environment | grep -qE '^(WAYLAND_)?DISPLAY=')
 then
