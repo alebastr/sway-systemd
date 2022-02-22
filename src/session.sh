@@ -10,6 +10,7 @@
 #    - DISPLAY - for X11 applications that are started as user session services
 #    - WAYLAND_DISPLAY - similarly, this is needed for wayland-native services
 #    - I3SOCK/SWAYSOCK - allow services to talk with sway using i3 IPC protocol
+#    - SSH_AUTH_SOCK - connect to an ssh-agent instance such gnome-keyring-daemon
 #
 # 2. `xdg-desktop-portal` requires XDG_CURRENT_DESKTOP to be set in order to
 #    select the right implementation for screenshot and screencast portals.
@@ -37,7 +38,7 @@
 #  - https://systemd.io/DESKTOP_ENVIRONMENTS/
 #
 export XDG_CURRENT_DESKTOP=sway
-VARIABLES="DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+VARIABLES="DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY XDG_CURRENT_DESKTOP SSH_AUTH_SOCK"
 SESSION_TARGET="sway-session.target"
 
 # DBus activation environment is independent from systemd. While most of
