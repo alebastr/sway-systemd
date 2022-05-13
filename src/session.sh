@@ -84,12 +84,12 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# check if another session is already active:
-# either the target is active or the DISPLAY variables are set in systemd
-if systemctl --user -q is-active "$SESSION_TARGET" ||
-    (test -n "$WITH_CLEANUP" && test -n "$VARIABLES" &&
-        systemctl --user show-environment | grep -qE '^(WAYLAND_)?DISPLAY=')
-then
+# Check if another Sway session is already active.
+#
+# Ignores all other kinds of parallel or nested sessions
+# (Sway on Gnome/KDE/X11/etc.), as the only way to detect these is to check
+# for (WAYLAND_)?DISPLAY and that is know to be broken on Arch.
+if systemctl --user -q is-active "$SESSION_TARGET"; then
     echo "Another session found; refusing to overwrite the variables"
     exit 1
 fi
