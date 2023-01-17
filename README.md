@@ -7,7 +7,7 @@ This includes several areas of integration:
 
 - Propagate required variables to the systemd user session environment.
 - Define sway-session.target for starting user services.
-- Place GUI applications into a systemd scopes for systemd-oomd compatibility.
+- Place GUI applications into systemd scopes for systemd-oomd compatibility.
 
 ## Non-goals
 
