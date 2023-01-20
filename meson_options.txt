@@ -1,5 +1,7 @@
 # TODO: convert to boolean
 option('cgroups', type: 'feature', value: 'disabled',
        description: 'Install script for assigning cgroups to applications')
+option('autostart', type: 'boolean', value: false,
+       description: 'Install targets and scripts for systemd XDG desktop autostart support')
 option('locale1', type: 'boolean', value: false,
        description: 'Install script for applying org.freedesktop.locale1 input configuration to Sway')

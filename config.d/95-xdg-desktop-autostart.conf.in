@@ -1,0 +1,14 @@
+# Wait until a StatusNotifierItem tray implementation is available and
+# process XDG autostart entries.
+#
+# This horror has to exist because
+#
+#  - SNI spec mandates that if `IsStatusNotifierHostRegistered` is not set,
+#    the client should fall back to the Freedesktop System Tray specification
+#    (XEmbed).
+#  - There are actual implementations that take this seriously and implement
+#    a fallback *even if* StatusNotifierWatcher is already DBus-activated.
+#  - https://github.com/systemd/systemd/issues/3750
+#
+exec @execdir@/wait-sni-ready && \
+    systemctl --user start sway-xdg-autostart.target

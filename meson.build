@@ -20,6 +20,11 @@ if not get_option('cgroups').disabled()
   scripts += 'src/assign-cgroups.py'
 endif
 
+if get_option('autostart')
+  scripts += 'src/wait-sni-ready'
+  unit_files += 'sway-xdg-autostart.target'
+endif
+
 if get_option('locale1')
   scripts += 'src/locale1-xkb-config'
 endif
