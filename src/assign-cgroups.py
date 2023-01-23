@@ -256,19 +256,21 @@ class CGroupHandler:
             if self.cgroup_change_needed(cgroup):
                 await self.assign_scope(app_id, proc)
         # pylint: disable=broad-except
-        except Exception:
-            LOG.exception("Failed to modify cgroup for %s", app_id)
+        except Exception as exc:
+            LOG.error("Failed to modify cgroup for %s: %s", app_id, exc)
 
 
 async def main():
     """Async entrypoint"""
-    bus = await MessageBus().connect()
-    conn = await Connection(auto_reconnect=False).connect()
-    await CGroupHandler(bus, conn).connect()
     try:
+        bus = await MessageBus().connect()
+        conn = await Connection(auto_reconnect=False).connect()
+        await CGroupHandler(bus, conn).connect()
         await conn.main()
-    except (ConnectionError, EOFError):
-        logging.exception("Connection to the Sway IPC was lost")
+    except DBusError as exc:
+        LOG.error("DBus connection error: %s", exc)
+    except (ConnectionError, EOFError) as exc:
+        LOG.error("Sway IPC connection error: %s", exc)
 
 
 if __name__ == "__main__":
