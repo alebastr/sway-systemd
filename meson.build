@@ -8,6 +8,7 @@ configs = [
 ]
 
 scripts = [
+  'src/locale1.py',
   'src/session.sh',
 ]
 
