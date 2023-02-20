@@ -1,0 +1,3 @@
+# Apply system-wide XKB configuration stored in systemd-localed.
+#
+exec @execdir@/locale1-xkb-config

@@ -60,7 +60,7 @@ This includes several areas of integration:
 %config(noreplace) %{_sysconfdir}/sway/config.d/10-systemd-cgroups.conf
 %dir %{_libexecdir}/%{srcname}
 %{_libexecdir}/%{srcname}/assign-cgroups.py
-%{_libexecdir}/%{srcname}/locale1.py
+%{_libexecdir}/%{srcname}/locale1-xkb-config
 %{_libexecdir}/%{srcname}/session.sh
 %{_userunitdir}/sway-session.target
 

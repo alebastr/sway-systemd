@@ -21,7 +21,7 @@ if not get_option('cgroups').disabled()
 endif
 
 if get_option('locale1')
-  scripts += 'src/locale1.py'
+  scripts += 'src/locale1-xkb-config'
 endif
 
 systemd = dependency('systemd')
