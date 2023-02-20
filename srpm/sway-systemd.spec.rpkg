@@ -44,7 +44,8 @@ This includes several areas of integration:
 
 %build
 %meson \
-    -Dcgroups=enabled
+    -Dcgroups=enabled \
+    -Dlocale1=true
 %meson_build
 
 

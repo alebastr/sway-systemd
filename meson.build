@@ -8,7 +8,6 @@ configs = [
 ]
 
 scripts = [
-  'src/locale1.py',
   'src/session.sh',
 ]
 
@@ -19,6 +18,10 @@ unit_files = [
 if not get_option('cgroups').disabled()
   configs += 'config.d/10-systemd-cgroups.conf.in'
   scripts += 'src/assign-cgroups.py'
+endif
+
+if get_option('locale1')
+  scripts += 'src/locale1.py'
 endif
 
 systemd = dependency('systemd')
