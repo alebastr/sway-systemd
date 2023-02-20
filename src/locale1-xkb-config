@@ -8,7 +8,10 @@ Usage:
 
 See also:
     https://www.freedesktop.org/software/systemd/man/org.freedesktop.locale1.html
+
+Dependencies: dbus-next, i3ipc
 """
+import argparse
 import asyncio
 import logging
 from typing import Any, Dict
@@ -96,13 +99,15 @@ class Locale1Client:
                 LOG.error("command '%s' failed: %s", cmd, reply.error)
 
 
-async def main():
+async def main(oneshot: bool = False):
     """Async entrypoint"""
     try:
         bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
         conn = await Connection(auto_reconnect=False).connect()
         await Locale1Client(bus, conn).connect()
-        await conn.main()
+
+        if not oneshot:
+            await conn.main()
     except DBusError as exc:
         LOG.error("DBus connection error: %s", exc)
     except (ConnectionError, EOFError) as exc:
@@ -110,5 +115,20 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(
+        description="Sync Sway input configuration with org.freedesktop.locale1"
+    )
+    parser.add_argument(
+        "-l",
+        "--loglevel",
+        choices=["critical", "error", "warning", "info", "debug"],
+        default="info",
+        dest="loglevel",
+        help="set logging level",
+    )
+    parser.add_argument("--oneshot",
+                        action='store_true',
+                        help="apply current settings and exit immediately")
+    args = parser.parse_args()
+    logging.basicConfig(level=args.loglevel.upper())
+    asyncio.run(main(args.oneshot))
