@@ -21,11 +21,13 @@ if not get_option('cgroups').disabled()
 endif
 
 if get_option('autostart')
+  configs += 'config.d/95-xdg-desktop-autostart.conf.in'
   scripts += 'src/wait-sni-ready'
   unit_files += 'sway-xdg-autostart.target'
 endif
 
 if get_option('locale1')
+  configs += 'config.d/95-system-keyboard-config.conf.in'
   scripts += 'src/locale1-xkb-config'
 endif
 
