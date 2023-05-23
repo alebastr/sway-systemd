@@ -60,7 +60,8 @@ systemd interface, translates it into a Sway configuration and applies to all de
 The main motivation for this component was an ability to apply system-wide keyboard mappings configured in the OS installer
 to a greetd or SDDM greeter running with Sway as a display server.
 
-The component is not enabled by default, use `-Dlocale1=true` to install the helper script and check
+The component is not enabled by default, use `-Dautoload-configs=locale1,...`
+to install the configuration file to Sway's default config drop-in directory
 [`95-system-keyboard-config.conf`](./config.d/95-system-keyboard-config.conf.in) for necessary configuration.
 
 ### XDG Desktop autostart target
@@ -73,8 +74,9 @@ The recommended way to start it is a `Wants=xdg-desktop-autostart.target` in a D
 Most notably, there's a race between the autostarted applications and the panel with StatusNotifierHost implementation.
 SNI specification is very clear on that point; if the `StatusNotifierWatcher` is unavailable or `IsStatusNotifierHostRegistered` is not set, the application should fallback to XEmbed tray. There are even known implementations that follow this requirement (Qt...) and will fail to create a status icon if started before the panel.
 
-The component is not enabled by default, use `-Dautostart=true` to install the target and the helper script
-and check [`95-xdg-desktop-autostart.conf`](./config.d/95-xdg-desktop-autostart.conf.in) for necessary configuration.
+The component is not enabled by default, use `-Dautoload-configs=autostart,...`
+to install the configuration file to Sway's default config drop-in directory
+or check [`95-xdg-desktop-autostart.conf`](./config.d/95-xdg-desktop-autostart.conf.in) for necessary configuration.
 
 ## Installation
 
@@ -100,7 +102,8 @@ meson build
 sudo ninja -C build install
 ```
 
-Only the session part is installed by default. Pass `-Dcgroups=enabled` to the `meson build` command to install cgroups assignment script as well.
+All the components will be installed, but only the session part will be enabled by default.\
+Pass `-Dautoload-configs=autostart,cgroups,locale1` or `-Dautoload-configs=all` to the `meson build` command to enable the remaining components.
 
 The command will install configuration files from [`config.d`](./config.d/) to the `/etc/sway/config.d/` directory which is included from the default sway config. If you are using custom sway configuration file and already removed the `include /etc/sway/config.d/*` line you may need to edit your config and include the installed files.
 

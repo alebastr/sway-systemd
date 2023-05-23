@@ -36,7 +36,7 @@ and scripts required for running Sway in a systemd environment.
 This includes several areas of integration:
  - Propagate required variables to the systemd user session environment.
  - Define sway-session.target for starting user services.
-%{?with_cgroups: - Place GUI applications into a systemd scopes for systemd-oomd compatibility.}
+ - Place GUI applications into a systemd scopes for systemd-oomd compatibility.
 
 %prep
 {{{ git_setup_macro path=$(git rev-parse --show-toplevel) }}}
@@ -44,9 +44,7 @@ This includes several areas of integration:
 
 %build
 %meson \
-    -Dautostart=true \
-    -Dcgroups=enabled \
-    -Dlocale1=true
+    -Dautoload-configs='cgroups'
 %meson_build
 
 
@@ -59,6 +57,7 @@ This includes several areas of integration:
 %doc README.md
 %config(noreplace) %{_sysconfdir}/sway/config.d/10-systemd-session.conf
 %config(noreplace) %{_sysconfdir}/sway/config.d/10-systemd-cgroups.conf
+%{_datadir}/%{srcname}/*.conf
 %dir %{_libexecdir}/%{srcname}
 %{_libexecdir}/%{srcname}/assign-cgroups.py
 %{_libexecdir}/%{srcname}/locale1-xkb-config
