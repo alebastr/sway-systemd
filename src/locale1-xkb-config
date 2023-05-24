@@ -20,6 +20,7 @@ from dbus_next import BusType, DBusError, Variant
 from dbus_next.aio import MessageBus
 from i3ipc.aio import Connection
 
+DEFAULT_DEVICE = 'type:keyboard'
 LOG = logging.getLogger("sway.locale1")
 LOCALE1_BUS_NAME = "org.freedesktop.locale1"
 LOCALE1_OBJECT_PATH = "/org/freedesktop/locale1"
@@ -41,10 +42,14 @@ class Locale1Client:
     variant: str = ''
     options: str = ''
 
-    def __init__(self, bus: MessageBus, conn: Connection):
+    def __init__(self,
+                 bus: MessageBus,
+                 conn: Connection,
+                 device: str = DEFAULT_DEVICE):
         self._bus = bus
         self._conn = conn
         self._proxy = None
+        self._device = device
 
     async def connect(self):
         """asynchronous initialization code"""
@@ -87,10 +92,11 @@ class Locale1Client:
 
     async def update(self):
         """Pass the updated xkb configuration to Sway"""
-        LOG.info("xkb: layout '%s' model '%s', variant '%s' options '%s'",
-                 self.layout, self.model, self.variant, self.options)
+        LOG.info("xkb(%s): layout '%s' model '%s', variant '%s' options '%s'",
+                 self._device, self.layout, self.model, self.variant,
+                 self.options)
         cmd = {
-            f"input type:keyboard xkb_{name} '{self.__dict__[name]}'"
+            f"input {self._device} xkb_{name} '{self.__dict__[name]}'"
             for name in PROPERTIES.values()
         }
         replies = await self._conn.command(', '.join(cmd))
@@ -99,14 +105,14 @@ class Locale1Client:
                 LOG.error("command '%s' failed: %s", cmd, reply.error)
 
 
-async def main(oneshot: bool = False):
+async def main(args: argparse.Namespace):
     """Async entrypoint"""
     try:
         bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
         conn = await Connection(auto_reconnect=False).connect()
-        await Locale1Client(bus, conn).connect()
+        await Locale1Client(bus, conn, device=args.device).connect()
 
-        if not oneshot:
+        if not args.oneshot:
             await conn.main()
     except DBusError as exc:
         LOG.error("DBus connection error: %s", exc)
@@ -126,9 +132,18 @@ if __name__ == "__main__":
         dest="loglevel",
         help="set logging level",
     )
+    parser.add_argument(
+        "--device",
+        default=DEFAULT_DEVICE,
+        metavar='identifier',
+        nargs='?',
+        type=str,
+        help="control settings for a specific device "
+        "(see man sway-input; default: %(default)s)",
+    )
     parser.add_argument("--oneshot",
                         action='store_true',
                         help="apply current settings and exit immediately")
     args = parser.parse_args()
     logging.basicConfig(level=args.loglevel.upper())
-    asyncio.run(main(args.oneshot))
+    asyncio.run(main(args))
