@@ -28,8 +28,7 @@
 #    package here provides and uses `sway-session.target` which would bind to
 #    the `graphical-session.target`.
 #
-# 5. Optionally, stop the target and unset the variables when the compositor
-#    exits.
+# 5. Stop the target and unset the variables when the compositor exits.
 #
 # References:
 #  - https://github.com/swaywm/sway/wiki#gtk-applications-take-20-seconds-to-start
@@ -38,12 +37,12 @@
 #  - https://systemd.io/DESKTOP_ENVIRONMENTS/
 #
 export XDG_CURRENT_DESKTOP=sway
-export XDG_SESSION_DESKTOP=${XDG_SESSION_DESKTOP:-sway}
+export XDG_SESSION_DESKTOP="${XDG_SESSION_DESKTOP:-sway}"
 export XDG_SESSION_TYPE=wayland
 VARIABLES="DESKTOP_SESSION XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE"
 VARIABLES="${VARIABLES} DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY"
 SESSION_TARGET="sway-session.target"
-WITH_CLEANUP=""
+WITH_CLEANUP=1
 
 print_usage() {
     cat <<EOH
@@ -52,7 +51,7 @@ Usage:
   --add-env NAME, -E NAME
                     Add a variable name to the subset of environment passed
                     to the user session. Can be specified multiple times.
-  --with-cleanup    Run optional cleanup code at compositor exit.
+  --no-cleanup      Skip cleanup code at compositor exit.
 EOH
 }
 
@@ -73,7 +72,9 @@ while [ $# -gt 0 ]; do
         shift
         VARIABLES="${VARIABLES} ${1}" ;;
     --with-cleanup)
-        WITH_CLEANUP=1 ;;
+        ;; # ignore (enabled by default)
+    --no-cleanup)
+        unset WITH_CLEANUP ;;
     -*)
         echo "Unexpected option: $1" 1>&2
         print_usage

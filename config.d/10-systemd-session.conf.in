@@ -26,7 +26,6 @@
 #    package here provides and uses `sway-session.target` which would bind to
 #    the `graphical-session.target`.
 #
-# 5. Optionally, stop the target and unset the variables when the compositor
-#    exits.
+# 5. Stop the target and unset the variables when the compositor exits.
 #
-exec @execdir@/session.sh --with-cleanup
+exec @execdir@/session.sh

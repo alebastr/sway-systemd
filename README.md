@@ -28,9 +28,11 @@ A systemd user service may depend on or reference `sway-session.target` only if 
 
 ### Session script
 
-The [`session.sh`](./src/session.sh) script is responsible for importing variables into systemd and dbus activation environments and starting session target. When the `--with-cleanup` argument is specified, it also waits in the background until the compositor exits, stops the session target and unsets variables for systemd user session.
+The [`session.sh`](./src/session.sh) script is responsible for importing variables into systemd and dbus activation environments and starting session target.
+It also stays in the background until the compositor exits, stops the session target and unsets variables for systemd user session (this can be disabled by passing `--no-cleanup`).
 
-The script itself does not set any variables except `XDG_CURRENT_DESKTOP`; it simply passes the values received from sway. The list of variables and the name of the session target are currently hardcoded and could be changed by editing the script.
+The script itself does not set any variables except `XDG_CURRENT_DESKTOP`/`XDG_SESSION_TYPE`; it simply passes the values received from sway.
+The list of variables and the name of the session target are currently hardcoded and could be changed by editing the script.
 
 For a better description see [comments in the code](./src/session.sh).
 
@@ -112,6 +114,6 @@ The command will install configuration files from [`config.d`](./config.d/) to t
 1. Clone repository.
 2. Copy `units/*.target` to the systemd user unit directory (`/usr/lib/systemd/user/`, `$XDG_CONFIG_HOME/systemd/user/` or `~/.config/systemd/user` are common locations).
 3. Run `systemctl --user daemon-reload` to make systemd rescan the service files.
-4. Add `exec /path/to/cloned/repo/src/session.sh --with-cleanup` to your sway config for environment and session configuration.
+4. Add `exec /path/to/cloned/repo/src/session.sh` to your sway config for environment and session configuration.
 5. Add `exec /path/to/cloned/repo/src/assign-cgroups.py` to your sway config to enable cgroup assignment script.
 6. Restart your sway session or run `swaymsg` with the commands above. Simple config reload is insufficient as it does not execute `exec` commands.
