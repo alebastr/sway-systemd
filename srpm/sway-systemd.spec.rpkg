@@ -64,6 +64,7 @@ This includes several areas of integration:
 %{_libexecdir}/%{srcname}/session.sh
 %{_libexecdir}/%{srcname}/wait-sni-ready
 %{_userunitdir}/sway-session.target
+%{_userunitdir}/sway-session-shutdown.target
 %{_userunitdir}/sway-xdg-autostart.target
 
 

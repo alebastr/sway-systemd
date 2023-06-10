@@ -20,11 +20,14 @@ This includes several areas of integration:
 
 ## Components
 
-### Session target
+### Session targets
 
 Systemd forbids starting the `graphical-session.target` directly and encourages use of an environment-specific target units. Thus, the package here defines [`sway-session.target`](./units/sway-session.target) that binds to `graphical-session.target` and starts user services enabled for a graphical session. `sway-session.target` should be started when the compositor is ready and the user-session environment is set, and stopped before the compositor exits.
 
 A systemd user service may depend on or reference `sway-session.target` only if it is specific for sway. Otherwise, it's recommended to use `graphical-session.target`.
+
+A special `sway-session-shutdown.target` can be used to stop the `graphical-session.target` and `sway-session.target` with all the contained services.
+`systemctl start sway-session-shutdown.target` will apply the `Conflicts=` statements in the unit file and ensure that everything is exited, something that `systemctl stop sway-session.target` is unable to guarantee.
 
 ### Session script
 

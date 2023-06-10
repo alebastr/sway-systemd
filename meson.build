@@ -20,6 +20,7 @@ scripts = [
 
 unit_files = [
   'units/sway-session.target',
+  'units/sway-session-shutdown.target',
   'units/sway-xdg-autostart.target',
 ]
 

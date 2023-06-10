@@ -42,6 +42,7 @@ export XDG_SESSION_TYPE=wayland
 VARIABLES="DESKTOP_SESSION XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE"
 VARIABLES="${VARIABLES} DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY"
 SESSION_TARGET="sway-session.target"
+SESSION_SHUTDOWN_TARGET="sway-session-shutdown.target"
 WITH_CLEANUP=1
 
 print_usage() {
@@ -122,7 +123,7 @@ fi
 # declare cleanup handler and run it on script termination via kill or Ctrl-C
 session_cleanup () {
     # stop the session target and unset the variables
-    systemctl --user stop "$SESSION_TARGET"
+    systemctl --user start --job-mode=replace-irreversibly "$SESSION_SHUTDOWN_TARGET"
     if [ -n "$VARIABLES" ]; then
         # shellcheck disable=SC2086
         systemctl --user unset-environment $VARIABLES
