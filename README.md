@@ -22,7 +22,7 @@ This includes several areas of integration:
 
 ### Session target
 
-Systemd forbids starting the `graphical-session.target` directly and encourages use of an environment-specific target units. Thus, the package here defines [`sway-session.target`](./sway-session.target) that binds to `graphical-session.target` and starts user services enabled for a graphical session. `sway-session.target` should be started when the compositor is ready and the user-session environment is set, and stopped before the compositor exits.
+Systemd forbids starting the `graphical-session.target` directly and encourages use of an environment-specific target units. Thus, the package here defines [`sway-session.target`](./units/sway-session.target) that binds to `graphical-session.target` and starts user services enabled for a graphical session. `sway-session.target` should be started when the compositor is ready and the user-session environment is set, and stopped before the compositor exits.
 
 A systemd user service may depend on or reference `sway-session.target` only if it is specific for sway. Otherwise, it's recommended to use `graphical-session.target`.
 
@@ -110,7 +110,7 @@ The command will install configuration files from [`config.d`](./config.d/) to t
 ### Installing manually/using directly from git checkout
 
 1. Clone repository.
-2. Copy `sway-session.target` to the systemd user unit directory (`/usr/lib/systemd/user/`, `$XDG_CONFIG_HOME/systemd/user/` or `~/.config/systemd/user` are common locations).
+2. Copy `units/*.target` to the systemd user unit directory (`/usr/lib/systemd/user/`, `$XDG_CONFIG_HOME/systemd/user/` or `~/.config/systemd/user` are common locations).
 3. Run `systemctl --user daemon-reload` to make systemd rescan the service files.
 4. Add `exec /path/to/cloned/repo/src/session.sh --with-cleanup` to your sway config for environment and session configuration.
 5. Add `exec /path/to/cloned/repo/src/assign-cgroups.py` to your sway config to enable cgroup assignment script.

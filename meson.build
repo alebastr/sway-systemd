@@ -19,8 +19,8 @@ scripts = [
 ]
 
 unit_files = [
-  'sway-session.target',
-  'sway-xdg-autostart.target',
+  'units/sway-session.target',
+  'units/sway-xdg-autostart.target',
 ]
 
 systemd = dependency('systemd')
