@@ -25,8 +25,9 @@ unit_files = [
 
 systemd = dependency('systemd')
 conf_dir = get_option('sysconfdir') / 'sway' / 'config.d'
-exec_dir = get_option('libexecdir') / meson.project_name()
 data_dir = get_option('datadir') / meson.project_name()
+# must be absolute path for configuration_data
+exec_dir = get_option('prefix') / get_option('libexecdir') / meson.project_name()
 
 install_data(
   scripts,
