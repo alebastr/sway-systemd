@@ -5,30 +5,32 @@ function git_tag {
     git describe --tags --abbrev=0 2>/dev/null | head -n 1
 }
 
+function git_commit_count {
+    local tag=$1
+    if [ -n "$tag" ]; then
+        git rev-list "$tag"..HEAD --count 2>/dev/null || printf 0
+    else
+        git rev-list HEAD --count 2>/dev/null || printf 0
+    fi
+}
+
 function git_version {
     tag="$(git_tag)"
     tag_version="$(echo "$tag" | sed -E -n "s/^v?([^-]+)/\1/p")"
     if [ -z "$tag_version" ]; then
         tag_version=0
     fi
-    output "$tag_version"
+    commit_count="$(git_commit_count "$tag")"
+    if [ "$commit_count" -eq 0 ]; then
+        output "$tag_version"
+    else
+        shortcommit="$(git rev-parse --short HEAD)"
+        output "$tag_version^${commit_count}.git${shortcommit}"
+    fi
 }
 
 function git_release {
-    latest_tag="$(git_tag)"
-    if [ -n "$latest_tag" ]; then
-        commit_count="$(git rev-list "$latest_tag"..HEAD --count 2>/dev/null)"
-        commit_count=$(( commit_count + 1 ))
-    else
-        commit_count="$(git rev-list HEAD --count 2>/dev/null || printf 0)"
-    fi
-    if [ -n "$latest_tag"  ] && [ "$commit_count" -eq 1 ]; then
-        output "0.1"
-    else
-        snap_date="$(date +%+4Y%m%d)"
-        shortcommit="$(git rev-parse --short HEAD)"
-        output "0.$commit_count.${snap_date}git${shortcommit}"
-    fi
+    output "1"
 }
 
 function git_dir_release {
