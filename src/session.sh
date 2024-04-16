@@ -64,7 +64,6 @@ session_cleanup () {
         xargs -a "$ENV_FILE" systemctl --user unset-environment
         rm "$ENV_FILE"
     fi
-    swaymsg exit
 }
 
 while [ $# -gt 0 ]; do
@@ -85,6 +84,7 @@ while [ $# -gt 0 ]; do
         VARIABLES="${VARIABLES} ${1}" ;;
     --exit)
         session_cleanup
+        swaymsg exit
         exit ;;
     -*)
         echo "Unexpected option: $1" 1>&2
