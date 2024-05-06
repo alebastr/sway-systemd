@@ -45,7 +45,7 @@ SD_UNIT_FORMAT = "app-{app_id}-{unique}.scope"
 # Ids of known launcher applications that are not special surfaces. When the app is
 # started using one of those, it should be moved to a new cgroup.
 # Launcher should only be listed here if it creates cgroup of its own.
-LAUNCHER_APPS = ["nwgbar", "nwgdmenu", "nwggrid"]
+LAUNCHER_APPS = ["nwgbar", "nwgdmenu", "nwggrid", "onagre"]
 
 SD_UNIT_ESCAPE_RE = re.compile(r"[^\w:.\\]", re.ASCII)
 
