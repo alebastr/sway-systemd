@@ -95,10 +95,11 @@ class Locale1Client:
         LOG.info("xkb(%s): layout '%s' model '%s', variant '%s' options '%s'",
                  self._device, self.layout, self.model, self.variant,
                  self.options)
-        cmd = {
+        cmd = [f"input {self._device} xkb_variant ''"]
+        cmd.extend([
             f"input {self._device} xkb_{name} '{self.__dict__[name]}'"
             for name in PROPERTIES.values()
-        }
+        ])
         replies = await self._conn.command(', '.join(cmd))
         for cmd, reply in zip(cmd, replies):
             if reply.error is not None:
