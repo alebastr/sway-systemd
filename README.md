@@ -15,24 +15,25 @@ This includes several areas of integration:
 - Running the compositor itself as a user service.
   [sway-services] already exists and does exactly that.
 
-- Managing sway environment.
-  It's hard, opinionated and depends on the way user starts sway, so I don't
+- Managing Sway environment.
+  It's hard, opinionated and depends on the way user starts Sway, so I don't
   have a solution that works for everyone and is acceptable for default
-  configuration.  See also [#6].\
-  The common solutions are `~/.profile` (if your display manager supports that),
-  `~/.pam_environment`, or a wrapper script that sets the variables before
-  starting sway.
+  configuration.  See also [#6].
 
-- Supporting multiple concurrent sway sessions for the same user.
+  The common solutions are `~/.profile` (if your display manager supports that)
+  or a wrapper script that sets the variables before starting Sway.
+
+- Supporting multiple concurrent Sway sessions for the same user.
   It's uncommon and doing so would cause problems for which there are no easy
   solutions:
-  To make this work, we set `WAYLAND_DISPLAY` with a systemd user session.
-  This environment variable only accurate per-session, while systemd user
-  sessions are per-user.
-  If the user starts a second Sway instance on the same machine, the new
-  instance would overwrite this value, which could cause some services to break
-  in the first session if they were to read the variable after the second
-  session starts.
+
+  As a part of the integration, we set `WAYLAND_DISPLAY` and `DISPLAY` for a
+  systemd user session.
+  The variables are only accurate per-session, while the systemd user sessions
+  are per-user.
+  So if the user starts a second Sway instance on the same machine, the new
+  instance would overwrite the variables, potentially causing some services to
+  break for the first session.
 
 ## Components
 
@@ -40,18 +41,17 @@ This includes several areas of integration:
 
 Systemd forbids starting the `graphical-session.target` directly and encourages
 use of an environment-specific target units.  Thus, the package here defines
-[`sway-session.target`] that binds to `graphical-session.target` and starts
+[`sway-session.target`] that binds to the `graphical-session.target` and starts
 user services enabled for a graphical session.
 `sway-session.target` should be started when the compositor is ready and the
-user-session environment is set, and stopped before the compositor exits.
+user session environment is set, and stopped before the compositor exits.
 
-A systemd user service may depend on or reference `sway-session.target` only if
-it is specific for sway.  Otherwise, it's recommended to use
-`graphical-session.target`.
+An user service may depend on or reference `sway-session.target` only if it is
+specific for Sway. Otherwise, it's recommended to use `graphical-session.target`.
 
 A special `sway-session-shutdown.target` can be used to stop the
-`graphical-session.target` and `sway-session.target` with all the contained
-services.
+`graphical-session.target` and the `sway-session.target` with all the contained
+services.\
 `systemctl start sway-session-shutdown.target` will apply the `Conflicts=`
 statements in the unit file and ensure that everything is exited, something that
 `systemctl stop sway-session.target` is unable to guarantee.
@@ -65,7 +65,7 @@ the session target and unsets variables for systemd user session
 (this can be disabled by passing `--no-cleanup`).
 
 The script itself does not set any variables except `XDG_CURRENT_DESKTOP`/
-`XDG_SESSION_TYPE`; it simply passes the values received from sway.
+`XDG_SESSION_TYPE`; it simply passes the values received from Sway.
 The list of variables and the name of the session target are currently
 hardcoded and could be changed by editing the script.
 
@@ -83,7 +83,7 @@ The script is necessary to overcome a limitation of `systemd-oomd`:
 it only tracks resource usage by cgroups and kills the whole group when
 a single application misbehaves and exceeds resource usage limits.
 By placing individual apps into isolated cgroups we are decreasing the chance
-that oomd killer would target the group with the compositor and accidentally
+that the oomd killer would target the group with the compositor and accidentally
 terminate the session.
 
 It can also be used to impose resource usage limits on a specific application,
@@ -96,9 +96,9 @@ with content
 MemoryHigh=2G
 ```
 
-you can tell systemd that all Firefox processes combined are not allowed to use
-more than 2 Gb of memory.  See [`systemd.resource-control(5)`] for other
-available resource control options.
+you can tell systemd that all the Firefox processes combined are not allowed to
+exceed 2 Gb of memory.  See [`systemd.resource-control(5)`] for other available
+resource control options.
 
 ### Keyboard layout configuration
 
@@ -110,7 +110,7 @@ The main motivation for this component was an ability to apply system-wide
 keyboard mappings configured in the OS installer to a greetd or SDDM greeter
 running with Sway as a display server.
 
-The component is not enabled by default, use `-Dautoload-configs=locale1,...`
+The component is not enabled by default. Use `-Dautoload-configs=locale1,...`
 to install the configuration file to Sway's default config drop-in directory or
 check [`95-system-keyboard-config.conf`] for necessary configuration.
 
@@ -134,14 +134,14 @@ should fallback to XEmbed tray.
 There are even known implementations that follow this requirement (Qt...) and
 will fail to create a status icon if started before the panel.
 
-The component is not enabled by default, use `-Dautoload-configs=autostart,...`
+The component is not enabled by default. Use `-Dautoload-configs=autostart,...`
 to install the configuration file to Sway's default config drop-in directory or
 check [`95-xdg-desktop-autostart.conf`] for necessary configuration.
 
 ## Installation
 
 <a href="https://repology.org/project/sway-systemd/versions">
-    <img src="https://repology.org/badge/vertical-allrepos/sway-systemd.svg"
+    <img src="https://repology.org/badge/vertical-allrepos/sway-systemd.svg?exclude_unsupported=1"
         alt="Packaging status" align="right">
 </a>
 
@@ -160,21 +160,25 @@ Cgroups script uses following python packages:
 ### Installing with meson
 
 ```
-meson build
-sudo ninja -C build install
+meson setup --sysconfidir=/etc [-Dautoload-configs=...,...] build
+sudo meson install -C build
 ```
 
-All the components will be installed, but only the session part will be enabled
-by default.\
-Pass `-Dautoload-configs=autostart,cgroups,locale1` or `-Dautoload-configs=all`
-to the `meson build` command to enable the remaining components.
+The command will install configuration files from [`config.d`](./config.d/)
+to the `/etc/sway/config.d/` directory included from the default Sway config.
+The `autoload-config` option allows you to specify the configuration files that
+are loaded by default, with the rest being installed to
+`$PREFIX/share/sway-systemd`.
 
-The command will install configuration files from [`config.d`](./config.d/) to
-the `/etc/sway/config.d/` directory which is included from the default sway
-config.
-If you are using custom sway configuration file and already removed the
-`include /etc/sway/config.d/*` line you may need to edit your config and
+If you are using a custom Sway configuration file and already removed the
+`include /etc/sway/config.d/*` line, you will need to edit your config and
 include the installed files.
+
+> [!NOTE]
+> It's not advised to enable everything system-wide, as behavior of certain
+> integration components can be unexpected and confusing for the users.
+> E.g. `locale1` can overwrite the keyboard options set in Sway config ([#21]),
+> and `autostart` can conflict with existing autostart configuration.
 
 ### Installing manually/using directly from git checkout
 
@@ -183,11 +187,11 @@ include the installed files.
    (`/usr/lib/systemd/user/`, `$XDG_CONFIG_HOME/systemd/user/` or
    `~/.config/systemd/user` are common locations).
 3. Run `systemctl --user daemon-reload` to make systemd rescan the service files.
-4. Add `exec /path/to/cloned/repo/src/session.sh` to your sway config for
+4. Add `exec /path/to/cloned/repo/src/session.sh` to your Sway config for
    environment and session configuration.
-5. Add `exec /path/to/cloned/repo/src/assign-cgroups.py` to your sway config
+5. Add `exec /path/to/cloned/repo/src/assign-cgroups.py` to your Sway config
    to enable cgroup assignment script.
-6. Restart your sway session or run `swaymsg` with the commands above.
+6. Restart your Sway session or run `swaymsg` with the commands above.
    Simple config reload is insufficient as it does not execute `exec` commands.
 
 [Sway]: https://swaywm.org
