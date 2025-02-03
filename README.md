@@ -160,7 +160,7 @@ Cgroups script uses following python packages:
 ### Installing with meson
 
 ```
-meson setup --sysconfidir=/etc [-Dautoload-configs=...,...] build
+meson setup --sysconfdir=/etc [-Dautoload-configs=...,...] build
 sudo meson install -C build
 ```
 
