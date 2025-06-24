@@ -10,7 +10,7 @@ launches and would fail to detect background apps or special surfaces.
 Therefore it's recommended to supplement the script with use of systemd user
 services for such background apps.
 
-Dependencies: dbus-next, i3ipc, psutil, tenacity, python-xlib
+Dependencies: dbus-fast, i3ipc, psutil, tenacity, python-xlib
 """
 import argparse
 import asyncio
@@ -22,9 +22,9 @@ import sys
 from functools import lru_cache
 from typing import Optional
 
-from dbus_next import Variant
-from dbus_next.aio import MessageBus
-from dbus_next.errors import DBusError
+from dbus_fast import Variant
+from dbus_fast.aio import MessageBus
+from dbus_fast.errors import DBusError
 from i3ipc import Event
 from i3ipc.aio import Con, Connection
 from psutil import Process

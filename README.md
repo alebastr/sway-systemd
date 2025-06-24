@@ -151,7 +151,7 @@ Session script calls these commands:
 `swaymsg`, `systemctl`, `dbus-update-activation-environment`.
 
 Cgroups script uses following python packages:
-[`dbus-next`](https://pypi.org/project/dbus-next/),
+[`dbus-fast`](https://pypi.org/project/dbus-fast/),
 [`i3ipc`](https://pypi.org/project/i3ipc/),
 [`psutil`](https://pypi.org/project/psutil/),
 [`tenacity`](https://pypi.org/project/tenacity/),

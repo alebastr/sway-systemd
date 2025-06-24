@@ -3,13 +3,13 @@
 A simple script for waiting until an org.kde.StatusNotifierItem host implementation
 is available and ready.
 
-Dependencies: dbus-next, tenacity
+Dependencies: dbus-fast, tenacity
 """
 import asyncio
 import logging
 import os
 
-from dbus_next.aio import MessageBus
+from dbus_fast.aio import MessageBus
 from tenacity import retry, stop_after_delay, wait_fixed
 
 LOG = logging.getLogger("wait-sni-host")

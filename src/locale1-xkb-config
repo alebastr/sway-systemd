@@ -9,15 +9,15 @@ Usage:
 See also:
     https://www.freedesktop.org/software/systemd/man/org.freedesktop.locale1.html
 
-Dependencies: dbus-next, i3ipc
+Dependencies: dbus-fast, i3ipc
 """
 import argparse
 import asyncio
 import logging
 from typing import Any, Dict
 
-from dbus_next import BusType, DBusError, Variant
-from dbus_next.aio import MessageBus
+from dbus_fast import BusType, DBusError, Variant
+from dbus_fast.aio import MessageBus
 from i3ipc.aio import Connection
 
 DEFAULT_DEVICE = 'type:keyboard'
