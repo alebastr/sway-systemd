@@ -40,13 +40,13 @@ This includes several areas of integration:
 ### Session targets
 
 Systemd forbids starting the `graphical-session.target` directly and encourages
-use of an environment-specific target units.  Thus, the package here defines
-[`sway-session.target`] that binds to the `graphical-session.target` and starts
-user services enabled for a graphical session.
-`sway-session.target` should be started when the compositor is ready and the
-user session environment is set, and stopped before the compositor exits.
+use of an environment-specific target units.  Thus, the package here uses
+`sway-session.target` of [`sway-contrib`] that binds to the
+`graphical-session.target` and starts user services enabled for a graphical
+session. `sway-session.target` should be started when the compositor is ready
+and the user session environment is set, and stopped before the compositor exits.
 
-An user service may depend on or reference `sway-session.target` only if it is
+A user service may depend on or reference `sway-session.target` only if it is
 specific for Sway. Otherwise, it's recommended to use `graphical-session.target`.
 
 A special `sway-session-shutdown.target` can be used to stop the
@@ -183,15 +183,16 @@ include the installed files.
 ### Installing manually/using directly from git checkout
 
 1. Clone repository.
-2. Copy `units/*.target` to the systemd user unit directory
+1. Copy `units/*.target` to the systemd user unit directory
    (`/usr/lib/systemd/user/`, `$XDG_CONFIG_HOME/systemd/user/` or
    `~/.config/systemd/user` are common locations).
-3. Run `systemctl --user daemon-reload` to make systemd rescan the service files.
-4. Add `exec /path/to/cloned/repo/src/session.sh` to your Sway config for
+1. Install [`sway-contrib`], or at least its systemd targets.
+1. Run `systemctl --user daemon-reload` to make systemd rescan the service files.
+1. Add `exec /path/to/cloned/repo/src/session.sh` to your Sway config for
    environment and session configuration.
-5. Add `exec /path/to/cloned/repo/src/assign-cgroups.py` to your Sway config
+1. Add `exec /path/to/cloned/repo/src/assign-cgroups.py` to your Sway config
    to enable cgroup assignment script.
-6. Restart your Sway session or run `swaymsg` with the commands above.
+1. Restart your Sway session or run `swaymsg` with the commands above.
    Simple config reload is insufficient as it does not execute `exec` commands.
 
 [Sway]: https://swaywm.org
@@ -200,12 +201,12 @@ include the installed files.
 [`systemd.resource-control(5)`]: https://www.freedesktop.org/software/systemd/man/systemd.resource-control.html
 [`org.freedesktop.locale1`]: https://www.freedesktop.org/software/systemd/man/org.freedesktop.locale1.html
 [`xdg-desktop-autostart.target`]: https://www.freedesktop.org/software/systemd/man/systemd.special.html#xdg-desktop-autostart.target
+[`sway-contrib`]: https://github.com/OctopusET/sway-contrib
 [`systemd-xdg-autostart-generator(8)`]: https://www.freedesktop.org/software/systemd/man/systemd-xdg-autostart-generator.html
 
 [`95-system-keyboard-config.conf`]: ./config.d/95-system-keyboard-config.conf.in
 [`95-xdg-desktop-autostart.conf`]: ./config.d/95-xdg-desktop-autostart.conf.in
 [`locale1-xkb-config`]: ./src/locale1-xkb-config
-[`sway-session.target`]: ./units/sway-session.target
 
 [#6]: https://github.com/alebastr/sway-systemd/issues/6
 [#21]: https://github.com/alebastr/sway-systemd/issues/21

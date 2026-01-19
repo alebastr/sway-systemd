@@ -24,6 +24,7 @@ Requires:       python3dist(psutil)
 Requires:       python3dist(python-xlib)
 Requires:       python3dist(tenacity)
 Requires:       sway
+Requires:       sway-contrib
 Requires:       systemd
 Recommends:     /usr/bin/dbus-update-activation-environment
 
@@ -63,7 +64,6 @@ This includes several areas of integration:
 %{_libexecdir}/%{srcname}/locale1-xkb-config
 %{_libexecdir}/%{srcname}/session.sh
 %{_libexecdir}/%{srcname}/wait-sni-ready
-%{_userunitdir}/sway-session.target
 %{_userunitdir}/sway-session-shutdown.target
 %{_userunitdir}/sway-xdg-autostart.target
 
