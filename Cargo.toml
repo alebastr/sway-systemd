@@ -1,0 +1,20 @@
+[package]
+name = "assign-cgroups"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "assign-cgroups"
+path = "src/assign-cgroups.rs"
+
+[dependencies]
+dbus         = "0.9"
+tokio        = { version = "1", features = ["full"] }
+log          = "0.4"
+env_logger   = "0.10"
+clap         = { version = "=3.2.25", features = ["derive"] }
+libc         = "0.2"
+swayipc-async = "3.0.0"
+futures-util = { version = "0.3.32", default-features = false, features = ["std"] }

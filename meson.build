@@ -1,5 +1,5 @@
 project('sway-systemd', [],
-  meson_version: '>= 0.51',
+  meson_version: '>= 0.56',
   license: 'MIT',
 )
 
@@ -13,7 +13,6 @@ configs = {
 
 scripts = [
   'src/session.sh',
-  'src/assign-cgroups.py',
   'src/wait-sni-ready',
   'src/locale1-xkb-config',
 ]
@@ -52,3 +51,36 @@ foreach config, enabled : configs
     install_dir: enabled ? conf_dir : data_dir,
   )
 endforeach
+
+# Build and install the assign-cgroups Rust binary
+cargo = find_program('cargo')
+
+if get_option('buildtype') == 'release'
+  cargo_flags = '--release --locked'
+  cargo_profile = 'release'
+else
+  cargo_flags = ''
+  cargo_profile = 'debug'
+endif
+
+cargo_target_dir = meson.project_build_root() / 'cargo-target'
+cargo_bin = cargo_target_dir / cargo_profile / 'assign-cgroups'
+
+custom_target(
+  'assign-cgroups',
+  build_by_default: true,
+  output: 'assign-cgroups',
+  console: true,
+  install: true,
+  install_dir: exec_dir,
+  command: [
+    'sh', '-c',
+    cargo.full_path() + ' build' +
+    (cargo_flags != '' ? ' ' + cargo_flags : '') +
+    ' --manifest-path ' + (meson.project_source_root() / 'Cargo.toml') +
+    ' --target-dir ' + cargo_target_dir +
+    ' && cp ' + cargo_bin + ' "$1"',
+    '_',
+    '@OUTPUT@',
+  ],
+)
