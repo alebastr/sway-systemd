@@ -4,6 +4,8 @@
 
 The goal of this project is to provide a minimal set of configuration files and
 scripts required for running [Sway] in a systemd environment.
+The goal of this project is to provide a minimal set of configuration files and
+scripts required for running [Sway] in a systemd environment.
 This includes several areas of integration:
 
 - Propagate required variables to the systemd user session environment.
@@ -73,32 +75,20 @@ For a better description see [comments in the code](./src/session.sh).
 
 ### Cgroups assignment script
 
-The [`assign-cgroups.py`](./src/assign-cgroups.py) script subscribes to a new
-window i3 ipc event and automatically creates a transient scope unit
-(with path `app.slice/app-${app_id}.slice/app-${app_id}-${pid}.scope`) for each
-GUI application launched in the same cgroup as the compositor.
-Existing child processes of the application are assigned to the same scope.
+The [`assign-cgroups.py`](./src/assign-cgroups.py) script subscribes to a new window i3 ipc event and automatically creates a transient scope unit (with path `app.slice/app-${app_id}.slice/app-${app_id}-${pid}.scope`) for each GUI application launched in the same cgroup as the compositor. Existing child processes of the application are assigned to the same scope.
 
-The script is necessary to overcome a limitation of `systemd-oomd`:
-it only tracks resource usage by cgroups and kills the whole group when
-a single application misbehaves and exceeds resource usage limits.
-By placing individual apps into isolated cgroups we are decreasing the chance
-that the oomd killer would target the group with the compositor and accidentally
-terminate the session.
+The script is necessary to overcome a limitation of `systemd-oomd`: it only tracks resource usage by cgroups and kills the whole group when a single application misbehaves and exceeds resource usage limits. By placing individual apps into isolated cgroups we are decreasing the chance that oomd killer would target the group with the compositor and accidentally terminate the session.
 
-It can also be used to impose resource usage limits on a specific application,
-because transient units are still loading override configs.  For example,
-by creating `$XDG_CONFIG_HOME/systemd/user/app-firefox.slice.d/override.conf`
-with content
+It can also be used to impose resource usage limits on a specific application, because transient units are still loading override configs.\
+For example, by creating `$XDG_CONFIG_HOME/systemd/user/app-firefox.slice.d/override.conf` with content
 
 ```ini
 [Slice]
 MemoryHigh=2G
 ```
 
-you can tell systemd that all the Firefox processes combined are not allowed to
-exceed 2 Gb of memory.  See [`systemd.resource-control(5)`] for other available
-resource control options.
+you can tell systemd that all Firefox processes combined are not allowed to use more than 2 Gb of memory.
+See [`systemd.resource-control(5)`](https://www.freedesktop.org/software/systemd/man/systemd.resource-control.html) for other available resource control options.
 
 ### Keyboard layout configuration
 
@@ -147,11 +137,10 @@ check [`95-xdg-desktop-autostart.conf`] for necessary configuration.
 
 ### Dependencies
 
-Session script calls these commands:
-`swaymsg`, `systemctl`, `dbus-update-activation-environment`.
+Session script calls these commands: `swaymsg`, `systemctl`, `dbus-update-activation-environment`.
 
 Cgroups script uses following python packages:
-[`dbus-fast`](https://pypi.org/project/dbus-fast/),
+[`dbus-next`](https://pypi.org/project/dbus-next/),
 [`i3ipc`](https://pypi.org/project/i3ipc/),
 [`psutil`](https://pypi.org/project/psutil/),
 [`tenacity`](https://pypi.org/project/tenacity/),
@@ -160,25 +149,14 @@ Cgroups script uses following python packages:
 ### Installing with meson
 
 ```
-meson setup --sysconfdir=/etc [-Dautoload-configs=...,...] build
-sudo meson install -C build
+meson build
+sudo ninja -C build install
 ```
 
-The command will install configuration files from [`config.d`](./config.d/)
-to the `/etc/sway/config.d/` directory included from the default Sway config.
-The `autoload-config` option allows you to specify the configuration files that
-are loaded by default, with the rest being installed to
-`$PREFIX/share/sway-systemd`.
+All the components will be installed, but only the session part will be enabled by default.\
+Pass `-Dautoload-configs=autostart,cgroups,locale1` or `-Dautoload-configs=all` to the `meson build` command to enable the remaining components.
 
-If you are using a custom Sway configuration file and already removed the
-`include /etc/sway/config.d/*` line, you will need to edit your config and
-include the installed files.
-
-> [!NOTE]
-> It's not advised to enable everything system-wide, as behavior of certain
-> integration components can be unexpected and confusing for the users.
-> E.g. `locale1` can overwrite the keyboard options set in Sway config ([#21]),
-> and `autostart` can conflict with existing autostart configuration.
+The command will install configuration files from [`config.d`](./config.d/) to the `/etc/sway/config.d/` directory which is included from the default sway config. If you are using custom sway configuration file and already removed the `include /etc/sway/config.d/*` line you may need to edit your config and include the installed files.
 
 ### Installing manually/using directly from git checkout
 
@@ -187,25 +165,6 @@ include the installed files.
    (`/usr/lib/systemd/user/`, `$XDG_CONFIG_HOME/systemd/user/` or
    `~/.config/systemd/user` are common locations).
 3. Run `systemctl --user daemon-reload` to make systemd rescan the service files.
-4. Add `exec /path/to/cloned/repo/src/session.sh` to your Sway config for
-   environment and session configuration.
-5. Add `exec /path/to/cloned/repo/src/assign-cgroups.py` to your Sway config
-   to enable cgroup assignment script.
-6. Restart your Sway session or run `swaymsg` with the commands above.
-   Simple config reload is insufficient as it does not execute `exec` commands.
-
-[Sway]: https://swaywm.org
-[sway-services]: https://github.com/xdbob/sway-services/
-
-[`systemd.resource-control(5)`]: https://www.freedesktop.org/software/systemd/man/systemd.resource-control.html
-[`org.freedesktop.locale1`]: https://www.freedesktop.org/software/systemd/man/org.freedesktop.locale1.html
-[`xdg-desktop-autostart.target`]: https://www.freedesktop.org/software/systemd/man/systemd.special.html#xdg-desktop-autostart.target
-[`systemd-xdg-autostart-generator(8)`]: https://www.freedesktop.org/software/systemd/man/systemd-xdg-autostart-generator.html
-
-[`95-system-keyboard-config.conf`]: ./config.d/95-system-keyboard-config.conf.in
-[`95-xdg-desktop-autostart.conf`]: ./config.d/95-xdg-desktop-autostart.conf.in
-[`locale1-xkb-config`]: ./src/locale1-xkb-config
-[`sway-session.target`]: ./units/sway-session.target
-
-[#6]: https://github.com/alebastr/sway-systemd/issues/6
-[#21]: https://github.com/alebastr/sway-systemd/issues/21
+4. Add `exec /path/to/cloned/repo/src/session.sh` to your sway config for environment and session configuration.
+5. Add `exec /path/to/cloned/repo/src/assign-cgroups.py` to your sway config to enable cgroup assignment script.
+6. Restart your sway session or run `swaymsg` with the commands above. Simple config reload is insufficient as it does not execute `exec` commands.

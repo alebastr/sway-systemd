@@ -1,0 +1,5 @@
+.idea/
+.zig-cache/
+.build*/
+target/
+zig-out/

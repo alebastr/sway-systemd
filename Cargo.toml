@@ -1,0 +1,17 @@
+[package]
+name = "sway-systemd"
+version = "0.4.1"
+edition = "2024"
+license = "MIT"
+
+[[bin]]
+name = "wait-sni-ready"
+path = "src/wait_sni_ready.rs"
+
+[[bin]]
+name = "locale1-xkb-config"
+path = "src/locale1_xkb_config.rs"
+
+[dependencies]
+dbus = "0.9"
+swayipc = "4.0"

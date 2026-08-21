@@ -2,9 +2,6 @@
 #
 # The configuration can be viewed with `localectl` and modified
 # with `localectl set-x11-keymap`.
-#
-# Normal mode will pick up the configuration changes immediately
-# and oneshot mode will require a Sway config reload.
 
-# exec @execdir@/locale1-xkb-config
-exec_always @execdir@/locale1-xkb-config --oneshot
+# exec @execdir@/locale1-xkb-config --watch
+exec_always @execdir@/locale1-xkb-config

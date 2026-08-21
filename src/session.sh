@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/sh
 #
 # Address several issues with DBus activation and systemd user sessions
 #
@@ -42,9 +42,14 @@ export XDG_SESSION_TYPE=wayland
 VARIABLES="DESKTOP_SESSION XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE"
 VARIABLES="${VARIABLES} DISPLAY I3SOCK SWAYSOCK WAYLAND_DISPLAY"
 VARIABLES="${VARIABLES} XCURSOR_THEME XCURSOR_SIZE"
+VARIABLES="${VARIABLES} XCURSOR_THEME XCURSOR_SIZE"
+ENV_IMPORT_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/sway/import.env"
+if [ -f "$ENV_IMPORT_FILE" ]; then
+    VARIABLES="${VARIABLES} $(tr '\n' ' ' < "$ENV_IMPORT_FILE")"
+fi
 SESSION_TARGET="sway-session.target"
 SESSION_SHUTDOWN_TARGET="sway-session-shutdown.target"
-WITH_CLEANUP=1
+ENV_FILE="$XDG_RUNTIME_DIR/$SESSION_TARGET.env"
 
 print_usage() {
     cat <<EOH
@@ -53,8 +58,18 @@ Usage:
   --add-env NAME, -E NAME
                     Add a variable name to the subset of environment passed
                     to the user session. Can be specified multiple times.
-  --no-cleanup      Skip cleanup code at compositor exit.
+  --exit            Stop sway session and exit sway.
 EOH
+}
+
+session_cleanup () {
+    # stop the session target and unset the variables
+    systemctl --user start --job-mode=replace-irreversibly "$SESSION_SHUTDOWN_TARGET"
+    if [ -f "$ENV_FILE" ]; then
+        # shellcheck disable=SC2086
+        xargs -a "$ENV_FILE" systemctl --user unset-environment
+        rm "$ENV_FILE"
+    fi
 }
 
 while [ $# -gt 0 ]; do
@@ -73,10 +88,10 @@ while [ $# -gt 0 ]; do
     --add-env | -E)
         shift
         VARIABLES="${VARIABLES} ${1}" ;;
-    --with-cleanup)
-        ;; # ignore (enabled by default)
-    --no-cleanup)
-        unset WITH_CLEANUP ;;
+    --exit)
+        session_cleanup
+        swaymsg exit
+        exit ;;
     -*)
         echo "Unexpected option: $1" 1>&2
         print_usage
@@ -112,26 +127,4 @@ systemctl --user reset-failed
 # shellcheck disable=SC2086
 systemctl --user import-environment $VARIABLES
 systemctl --user start "$SESSION_TARGET"
-
-# Optionally, wait until the compositor exits and cleanup variables and services.
-if [ -z "$WITH_CLEANUP" ] ||
-    [ -z "$SWAYSOCK" ] ||
-    ! hash swaymsg 2>/dev/null
-then
-    exit 0;
-fi
-
-# declare cleanup handler and run it on script termination via kill or Ctrl-C
-session_cleanup () {
-    # stop the session target and unset the variables
-    systemctl --user start --job-mode=replace-irreversibly "$SESSION_SHUTDOWN_TARGET"
-    if [ -n "$VARIABLES" ]; then
-        # shellcheck disable=SC2086
-        systemctl --user unset-environment $VARIABLES
-    fi
-}
-trap session_cleanup INT TERM
-# wait until the compositor exits
-swaymsg -t subscribe '["shutdown"]'
-# run cleanup handler on normal exit
-session_cleanup
+echo "$VARIABLES" > "$ENV_FILE"
