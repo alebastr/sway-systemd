@@ -1,21 +1,18 @@
-project('sway-systemd', [],
-  meson_version: '>= 0.51',
+project('sway-systemd', ['c'],
+  version : '0.4.1',
+  default_options : ['warning_level=3', 'c_std=c2x'],
+  meson_version: '>= 0.57',
   license: 'MIT',
 )
 
-enabled = get_option('autoload-configs')
-configs = {
-  'config.d/10-systemd-session.conf.in':        true,
-  'config.d/10-systemd-cgroups.conf.in':        enabled.contains('all') or enabled.contains('cgroups'),
-  'config.d/95-system-keyboard-config.conf.in': enabled.contains('all') or enabled.contains('locale1'),
-  'config.d/95-xdg-desktop-autostart.conf.in':  enabled.contains('all') or enabled.contains('autostart'),
-}
+configs = [
+  'config.d/10-systemd-session.conf.in',
+  'config.d/95-system-keyboard-config.conf.in',
+  'config.d/95-xdg-desktop-autostart.conf.in',
+]
 
 scripts = [
   'src/session.sh',
-  'src/assign-cgroups.py',
-  'src/wait-sni-ready',
-  'src/locale1-xkb-config',
 ]
 
 unit_files = [
@@ -29,6 +26,25 @@ conf_dir = get_option('sysconfdir') / 'sway' / 'config.d'
 data_dir = get_option('datadir') / meson.project_name()
 # must be absolute path for configuration_data
 exec_dir = get_option('prefix') / get_option('libexecdir') / meson.project_name()
+
+libsystemd = dependency('libsystemd')
+deps = [libsystemd]
+
+executable(
+  'wait-sni-ready',
+  'src/wait-sni-ready.c',
+  dependencies : deps,
+  install : true,
+  install_dir : exec_dir
+)
+
+executable(
+  'locale1-xkb-config',
+  'src/locale1-xkb-config.c',
+  dependencies: deps,
+  install: true,
+  install_dir: exec_dir
+)
 
 install_data(
   scripts,
@@ -44,11 +60,11 @@ install_data(
 conf_data = configuration_data()
 conf_data.set('execdir', exec_dir)
 
-foreach config, enabled : configs
+foreach config : configs
   configure_file(
     configuration: conf_data,
     input: config,
     output: '@BASENAME@',
-    install_dir: enabled ? conf_dir : data_dir,
+    install_dir: conf_dir,
   )
 endforeach

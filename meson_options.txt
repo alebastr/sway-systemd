@@ -1,3 +1,0 @@
-option('autoload-configs', type: 'array',
-       choices: ['all', 'autostart', 'cgroups', 'locale1'], value: [],
-       description: 'Install configuration for selected components into a system-wide Sway include directory (/etc/sway/config.d)')
